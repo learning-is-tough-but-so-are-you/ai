@@ -1,350 +1,427 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Python 演算法視覺化步驟練習</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Python 演算法視覺化步驟練習（iPad 友善版）</title>
     <script src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"></script>
     <style>
         * { box-sizing: border-box; }
+
+        :root {
+            --primary: #667eea;
+            --accent: #764ba2;
+            --ok: #28a745;
+            --warn: #ffc107;
+            --danger: #dc3545;
+            --bg-soft: #f8f9fa;
+            --text: #333;
+            --card-shadow: 0 18px 45px rgba(0,0,0,0.2);
+            --radius: 12px;
+        }
+
         body {
             margin: 0;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
             min-height: 100vh;
-            padding: 15px;
+            padding: 12px;
+            padding-top: calc(12px + env(safe-area-inset-top));
+            padding-right: calc(12px + env(safe-area-inset-right));
+            padding-bottom: calc(12px + env(safe-area-inset-bottom));
+            padding-left: calc(12px + env(safe-area-inset-left));
+            color: var(--text);
+            -webkit-text-size-adjust: 100%;
         }
+
         .container {
-            max-width: 1800px;
+            max-width: 1700px;
             margin: 0 auto;
             background: white;
-            border-radius: 12px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            border-radius: var(--radius);
+            box-shadow: var(--card-shadow);
             overflow: hidden;
             display: flex;
             flex-direction: column;
-            height: 95vh;
+            min-height: 92vh;
         }
+
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
             color: white;
-            padding: 20px;
+            padding: 16px;
             text-align: center;
         }
+
         .header h1 {
             margin: 0;
-            font-size: 1.8em;
-            margin-bottom: 5px;
+            font-size: 1.55rem;
+            margin-bottom: 4px;
+            line-height: 1.25;
         }
+
         .header p {
             margin: 0;
-            font-size: 0.9em;
-            opacity: 0.9;
+            font-size: 0.95rem;
+            opacity: 0.92;
         }
+
+        .status-pill {
+            display: inline-block;
+            margin-top: 10px;
+            background: rgba(255,255,255,0.18);
+            border: 1px solid rgba(255,255,255,0.28);
+            padding: 6px 12px;
+            border-radius: 999px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
         .main-content {
             display: flex;
             flex: 1;
+            min-height: 0;
             overflow: hidden;
         }
-        .sidebar {
-            width: 20%;
-            background: #f8f9fa;
-            border-right: 2px solid #e9ecef;
-            padding: 15px;
-            overflow-y: auto;
-        }
-        .editor-section {
-            width: 40%;
-            padding: 15px;
-            display: flex;
-            flex-direction: column;
-            border-right: 2px solid #e9ecef;
-            overflow-y: auto;
-        }
+
+        .sidebar,
+        .editor-section,
         .visualizer-section {
-            width: 40%;
-            padding: 15px;
+            padding: 14px;
+            overflow: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .sidebar {
+            width: 26%;
+            background: var(--bg-soft);
+            border-right: 2px solid #e9ecef;
+        }
+
+        .editor-section {
+            width: 37%;
+            border-right: 2px solid #e9ecef;
             display: flex;
             flex-direction: column;
-            overflow-y: auto;
+            min-height: 0;
         }
+
+        .visualizer-section {
+            width: 37%;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
         .section-title {
-            font-size: 1.05em;
+            font-size: 1.02rem;
             font-weight: 700;
-            color: #333;
-            margin-bottom: 12px;
-            margin-top: 0;
+            color: #2f2f2f;
+            margin: 0 0 10px 0;
         }
-        .algorithm-btn {
+
+        .algo-select {
             width: 100%;
-            padding: 12px;
-            margin-bottom: 8px;
+            min-height: 48px;
+            padding: 10px 12px;
+            border: 2px solid var(--primary);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #3f56cf;
             background: white;
-            border: 2px solid #667eea;
-            color: #667eea;
-            border-radius: 6px;
             cursor: pointer;
-            font-weight: 600;
-            font-size: 0.9em;
-            transition: all 0.3s;
+            outline: none;
+            touch-action: manipulation;
+            -webkit-appearance: none;
+            appearance: none;
         }
-        .algorithm-btn:hover {
-            background: #667eea;
-            color: white;
-        }
-        .algorithm-btn.active {
-            background: #667eea;
-            color: white;
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-        }
+
         .info-box {
             background: #e7f3ff;
-            border-left: 4px solid #667eea;
+            border-left: 4px solid var(--primary);
             padding: 10px;
-            margin-bottom: 12px;
+            margin: 10px 0;
             border-radius: 6px;
-            font-size: 0.85em;
+            font-size: 0.9rem;
+            line-height: 1.35;
         }
+
+        .steps-wrap {
+            border: 1px solid #dbe1ff;
+            border-radius: 8px;
+            background: #fbfcff;
+            padding: 8px;
+        }
+
         .step-item {
             background: #f0f3ff;
-            border: 1px solid #667eea;
+            border: 1px solid var(--primary);
             padding: 10px;
-            margin-bottom: 6px;
-            border-radius: 4px;
-            font-size: 0.85em;
-            cursor: grab;
-            display: flex;
-            align-items: center;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            align-items: start;
             gap: 8px;
+            font-size: 0.92rem;
         }
-        .step-item:hover {
-            background: #e7f3ff;
-            box-shadow: 0 2px 6px rgba(102, 126, 234, 0.2);
-        }
+
+        .step-item:last-child { margin-bottom: 0; }
+
         .step-handle {
-            color: #667eea;
-            font-weight: bold;
+            color: var(--primary);
+            font-weight: 700;
+            font-size: 1.05rem;
+            cursor: grab;
+            user-select: none;
+            padding-top: 2px;
         }
-        .code-editor {
-            background: #1e1e1e;
-            color: #d4d4d4;
-            border: 1px solid #667eea;
+
+        .step-text {
+            line-height: 1.4;
+            word-break: break-word;
+        }
+
+        .step-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .mini-btn {
+            min-width: 44px;
+            min-height: 36px;
+            border: 1px solid #c9d3ff;
             border-radius: 6px;
-            padding: 12px;
-            font-family: 'Courier New', monospace;
-            font-size: 0.85em;
-            line-height: 1.5;
-            flex: 1;
-            resize: none;
-            overflow: auto;
+            background: white;
+            color: #3f56cf;
+            font-weight: 700;
+            cursor: pointer;
+            touch-action: manipulation;
         }
-        .code-editor::placeholder {
-            color: #666;
+
+        .mini-btn:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
         }
+
+        .step-item.correct { background: #d4edda; border-color: var(--ok); }
+        .step-item.incorrect { background: #f8d7da; border-color: var(--danger); }
+
+        .hint-box {
+            margin-top: 8px;
+            background: #e7f3ff;
+            border-left: 4px solid var(--primary);
+            padding: 8px;
+            border-radius: 6px;
+            font-size: 0.84rem;
+            color: #4556b8;
+            font-style: italic;
+            display: none;
+        }
+
+        .steps-wrap.show-hints .hint-box { display: block; }
+
         .button-group {
             display: flex;
             gap: 8px;
-            margin-top: 12px;
+            margin-top: 10px;
             flex-wrap: wrap;
         }
+
         .btn {
-            padding: 10px 16px;
+            min-height: 44px;
+            padding: 10px 14px;
             border: none;
-            border-radius: 6px;
+            border-radius: 8px;
             cursor: pointer;
-            font-weight: 600;
-            font-size: 0.85em;
-            transition: all 0.3s;
+            font-weight: 700;
+            font-size: 0.92rem;
+            transition: all 0.2s;
+            touch-action: manipulation;
         }
-        .btn-primary {
-            background: #28a745;
-            color: white;
-        }
-        .btn-primary:hover {
-            background: #218838;
-        }
-        .btn-primary:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-        }
-        .btn-secondary {
-            background: #ffc107;
-            color: black;
-        }
-        .btn-secondary:hover {
-            background: #e0a800;
-        }
-        .btn-danger {
-            background: #dc3545;
-            color: white;
-        }
-        .btn-danger:hover {
-            background: #c82333;
-        }
-        .visualizer {
-            background: #f8f9fa;
-            border: 1px solid #e9ecef;
+
+        .btn-primary { background: var(--ok); color: white; }
+        .btn-primary:hover { background: #218838; }
+        .btn-primary:disabled { background: #bfc7bf; cursor: not-allowed; }
+
+        .btn-secondary { background: var(--warn); color: #2f2f2f; }
+        .btn-secondary:hover { background: #e0a800; }
+
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-danger:hover { background: #c82333; }
+
+        .sample-data {
+            background: #e8f5e9;
+            border-left: 4px solid var(--ok);
+            padding: 10px;
+            margin-bottom: 10px;
             border-radius: 6px;
-            padding: 12px;
-            flex: 1;
-            overflow: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            word-break: break-word;
         }
-        .execution-controls {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 12px;
-            flex-wrap: wrap;
-        }
-        .step-nav {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-        }
-        .step-counter {
-            background: #667eea;
-            color: white;
-            padding: 6px 12px;
-            border-radius: 4px;
-            font-weight: 600;
-            font-size: 0.85em;
-            min-width: 80px;
+
+        .lock-section {
+            padding: 14px;
+            margin-bottom: 10px;
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 8px;
             text-align: center;
         }
-        .variables-box {
-            background: white;
-            border: 1px solid #e9ecef;
-            border-radius: 6px;
-            padding: 12px;
-            margin-bottom: 12px;
-        }
-        .variables-title {
+
+        .lock-title {
             font-weight: 700;
-            color: #333;
-            margin-bottom: 8px;
-            font-size: 0.9em;
+            color: #856404;
+            font-size: 1rem;
         }
-        .variable-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 6px;
-            background: #f8f9fa;
-            border-radius: 4px;
-            margin-bottom: 4px;
+
+        .lock-subtitle {
+            color: #856404;
+            font-size: 0.92rem;
+            margin-top: 6px;
+        }
+
+        .code-editor {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            border: 1px solid var(--primary);
+            border-radius: 8px;
+            padding: 12px;
             font-family: 'Courier New', monospace;
-            font-size: 0.85em;
+            font-size: 16px;
+            line-height: 1.5;
+            flex: 1;
+            min-height: 230px;
+            resize: vertical;
+            overflow: auto;
+            -webkit-appearance: none;
         }
-        .var-name {
-            font-weight: 600;
-            color: #667eea;
-        }
-        .var-value {
-            color: #28a745;
-        }
-        .line-highlight {
-            background: #ffffcc;
-            padding: 2px 4px;
-            border-left: 3px solid #ffc107;
-        }
+
+        .code-editor::placeholder { color: #8c8c8c; }
+        .code-editor:disabled { opacity: 0.5; cursor: not-allowed; }
+
         .output-box {
             background: #000;
-            color: #00ff00;
-            border: 1px solid #28a745;
-            border-radius: 6px;
+            color: #00ff8c;
+            border: 1px solid var(--ok);
+            border-radius: 8px;
             padding: 10px;
             font-family: 'Courier New', monospace;
-            font-size: 0.85em;
+            font-size: 0.95rem;
             line-height: 1.4;
-            min-height: 100px;
+            min-height: 110px;
             overflow: auto;
             white-space: pre-wrap;
             word-break: break-word;
         }
+
         .output-box.error {
             color: #ff6b6b;
-            border-color: #dc3545;
+            border-color: var(--danger);
         }
-        .sample-data {
-            background: #e8f5e9;
-            border-left: 4px solid #28a745;
-            padding: 10px;
-            margin-bottom: 12px;
-            border-radius: 4px;
-            font-family: 'Courier New', monospace;
-            font-size: 0.85em;
-        }
-        .loading {
+
+        .result-panel {
+            display: none;
+            margin-top: 10px;
+            padding: 14px;
+            border-radius: 8px;
             text-align: center;
-            color: #667eea;
-            font-weight: 600;
+            font-weight: 700;
+            font-size: 1.05rem;
         }
-        .step-item.correct {
+
+        .result-icon {
+            font-size: 2.2rem;
+            margin-bottom: 8px;
+        }
+
+        .step-feedback {
+            margin-top: 10px;
+            font-size: 0.92rem;
+            font-weight: 700;
+            border-radius: 8px;
+            padding: 10px;
+            display: none;
+        }
+
+        .step-feedback.ok {
+            display: block;
             background: #d4edda;
-            border-color: #28a745;
+            color: #155724;
+            border-left: 5px solid var(--ok);
         }
-        .step-item.incorrect {
-            background: #f8d7da;
-            border-color: #dc3545;
-        }
-        .hint-box {
-            background: #e7f3ff;
-            border-left: 4px solid #667eea;
-            padding: 10px;
-            margin-top: 8px;
-            border-radius: 6px;
-            font-size: 0.8em;
-            color: #667eea;
-            font-style: italic;
-        }
-        .lock-message {
+
+        .step-feedback.bad {
+            display: block;
             background: #fff3cd;
-            border: 2px solid #ffc107;
-            padding: 15px;
-            margin-bottom: 12px;
-            border-radius: 6px;
-            text-align: center;
-            font-weight: 600;
             color: #856404;
+            border-left: 5px solid #ffbf00;
         }
-        .code-editor:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
+
+        @media (pointer: coarse) {
+            .btn { min-height: 48px; }
+            .mini-btn { min-width: 46px; min-height: 40px; }
+            .step-item { padding: 12px; }
+            .container { min-height: 94vh; }
         }
-        @media (max-width: 1200px) {
+
+        @media (max-width: 1400px) {
             .main-content {
                 flex-direction: column;
+                overflow: auto;
             }
+
             .sidebar, .editor-section, .visualizer-section {
                 width: 100%;
                 border-right: none;
                 border-bottom: 2px solid #e9ecef;
+                min-height: auto;
             }
+
+            .visualizer-section {
+                border-bottom: none;
+            }
+        }
+
+        @media (max-width: 640px) {
+            body { padding: 8px; }
+            .header h1 { font-size: 1.35rem; }
+            .header p { font-size: 0.88rem; }
+            .section-title { font-size: 0.98rem; }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>🎓 Python 演算法步驟編碼練習</h1>
+            <h1>🎓 Python 演算法步驟編碼練習（iPad 友善）</h1>
             <p>排列步驟 → 編寫代碼 → 自動評分</p>
+            <div class="status-pill" id="pyStatus">⏳ Python 引擎載入中...</div>
         </div>
 
         <div class="main-content">
             <!-- Sidebar -->
             <div class="sidebar">
-                <div class="section-title">📚 選擇演算法</div>
-                <button class="algorithm-btn active" onclick="selectAlgorithm('find_max')">📈 尋找最大值</button>
-                <button class="algorithm-btn" onclick="selectAlgorithm('find_min')">📉 尋找最小值</button>
-                <button class="algorithm-btn" onclick="selectAlgorithm('find_sum')">➕ 計算總和</button>
-                <button class="algorithm-btn" onclick="selectAlgorithm('find_avg')">📊 計算平均值</button>
+                <div class="section-title">📚 選擇演算法（下拉選單）</div>
+                <select id="algoSelect" class="algo-select" onchange="onAlgorithmChange()"></select>
 
-                <div class="section-title" style="margin-top: 20px;">📝 步驟順序 (必須完成)</div>
-                <div class="info-box">💡 拖放排列步驟 - 完成後才能編碼</div>
-                <div id="stepsList"></div>
-                <div id="stepFeedback"></div>
+                <div class="info-box" id="algoDescription">🎯 請從上方選單選擇演算法。</div>
+
+                <div class="section-title" style="margin-top: 16px;">📝 步驟順序（必須完成）</div>
+                <div class="info-box">💡 iPad 建議使用每一步右側的 <b>↑ / ↓</b> 排序（電腦可拖曳）</div>
+
+                <div class="steps-wrap" id="stepsWrap">
+                    <div id="stepsList"></div>
+                </div>
+
+                <div id="stepFeedback" class="step-feedback"></div>
 
                 <div class="button-group">
                     <button class="btn btn-secondary" onclick="resetSteps()">🔄 重設</button>
-                    <button class="btn btn-primary" onclick="showAllHints()" id="hintsBtn">💡 顯示提示</button>
+                    <button class="btn btn-primary" onclick="showAllHints()" id="hintsBtn">💡 顯示/隱藏提示</button>
                 </div>
             </div>
 
@@ -352,11 +429,19 @@
             <div class="editor-section">
                 <div class="section-title">✍️ 編寫代碼</div>
                 <div class="sample-data" id="sampleData">預設列表：K = [3, 7, 2, 9, 1, 5, 8]</div>
-                <div id="lockSection" style="padding: 15px; margin-bottom: 12px; background: #fff3cd; border: 2px solid #ffc107; border-radius: 6px; text-align: center;">
-                    <div style="font-weight: 600; color: #856404; font-size: 1.1em;">🔒 請先完成步驟順序排列</div>
-                    <div style="color: #856404; font-size: 0.9em; margin-top: 8px;">完成左側的步驟排列遊戲後，才能開始編碼</div>
+
+                <div class="lock-section" id="lockSection">
+                    <div class="lock-title">🔒 請先完成步驟順序排列</div>
+                    <div class="lock-subtitle">完成左側步驟排列後，才能開始編碼</div>
                 </div>
-                <textarea class="code-editor" id="codeEditor" placeholder="# Write your Python code here&#10;&#10;result = K[0]&#10;for number in K:&#10;    if number > result:&#10;        result = number&#10;print(result)" disabled></textarea>
+
+                <textarea
+                    class="code-editor"
+                    id="codeEditor"
+                    placeholder="# 在這裡寫 Python 程式碼"
+                    disabled
+                ></textarea>
+
                 <div class="button-group">
                     <button class="btn btn-primary" id="runBtn" onclick="runCode()" disabled>▶️ 執行並評分</button>
                     <button class="btn btn-danger" onclick="clearCode()">🗑️ 清除</button>
@@ -366,19 +451,19 @@
             <!-- Result Panel -->
             <div class="visualizer-section">
                 <div class="section-title">📊 執行結果與評分</div>
-                
+
                 <div style="margin-bottom: 12px;">
-                    <div class="section-title" style="margin: 0 0 8px 0;">執行輸出</div>
+                    <div class="section-title" style="margin-bottom: 8px;">執行輸出</div>
                     <div class="output-box" id="outputBox">等待執行...</div>
                 </div>
 
                 <div style="margin-bottom: 12px;">
-                    <div class="section-title" style="margin: 0 0 8px 0;">預期結果</div>
+                    <div class="section-title" style="margin-bottom: 8px;">預期結果</div>
                     <div class="output-box" style="color: #90EE90; border-color: #28a745;" id="expectedBox">9</div>
                 </div>
 
-                <div id="resultPanel" style="display: none; padding: 15px; border-radius: 6px; text-align: center; font-weight: 600; font-size: 1.1em;">
-                    <div id="resultIcon" style="font-size: 2.5em; margin-bottom: 10px;"></div>
+                <div class="result-panel" id="resultPanel">
+                    <div class="result-icon" id="resultIcon"></div>
                     <div id="resultText"></div>
                 </div>
             </div>
@@ -386,355 +471,570 @@
     </div>
 
     <script>
-        let pyodide;
+        let pyodide = null;
+        let pyodideReady = false;
         let currentAlgorithm = 'find_max';
-        let executionSteps = [];
-        let currentStep = 0;
-        let executionState = {};
+        let stepsOrder = [];
+        let hintsVisible = false;
 
         const algorithms = {
             find_max: {
+                label: '📈 尋找最大值',
                 name: '尋找最大值',
+                description: '透過逐一比較，找出列表中的最大元素。',
                 testData: [3, 7, 2, 9, 1, 5, 8],
                 steps: [
                     '將「結果」設為列表的第一個元素',
-                    '使用迴圈遍歷列表中的每個數字',
-                    '如果當前數字大於「結果」',
-                    '則更新「結果」為當前數字',
+                    '使用迴圈遍歷列表中的每個元素',
+                    '如果當前元素大於「結果」',
+                    '則更新「結果」為當前元素',
                     '迴圈結束後，輸出「結果」'
                 ],
+                hints: [
+                    'result = K[0]',
+                    'for i in range (xxxx)',
+                    'if K[i] > result:',
+                    'result = K[i]',
+                    'print(result)'
+                ],
                 correctOrder: [0, 1, 2, 3, 4],
-                expectedResult: '9'
+                expectedResult: 9,
+                starterCode: `result = K[0]
+for i in range (len(K)):
+    if K[i] > result:
+        result = K[i]
+print(result)`
             },
+
             find_min: {
+                label: '📉 尋找最小值',
                 name: '尋找最小值',
+                description: '透過逐一比較，找出列表中的最小元素。',
                 testData: [3, 7, 2, 9, 1, 5, 8],
                 steps: [
                     '將「結果」設為列表的第一個元素',
-                    '使用迴圈遍歷列表中的每個數字',
-                    '如果當前數字小於「結果」',
-                    '則更新「結果」為當前數字',
+                    '使用迴圈遍歷列表中的每個元素',
+                    '如果當前元素小於「結果」',
+                    '則更新「結果」為當前元素',
                     '迴圈結束後，輸出「結果」'
                 ],
+                hints: [
+                    'result = K[0]',
+                    'for i in range (xxxx)',
+                    'if K[i] < result:',
+                    'result = K[i]',
+                    'print(result)'
+                ],
                 correctOrder: [0, 1, 2, 3, 4],
-                expectedResult: '1'
+                expectedResult: 1,
+                starterCode: `result = K[0]
+for i in range (len(K)):
+    if K[i] < result:
+        result = K[i]
+print(result)`
             },
+
             find_sum: {
+                label: '➕ 計算總和',
                 name: '計算總和',
+                description: '使用迴圈把每個元素累加起來。',
                 testData: [1, 2, 3, 4, 5],
                 steps: [
                     '將「結果」初始化為 0',
-                    '使用迴圈遍歷列表中的每個數字',
-                    '將每個數字加到「結果」中',
+                    '使用迴圈遍歷列表中的每個元素',
+                    '將每個元素加到「結果」中',
                     '迴圈結束後，輸出「結果」'
                 ],
+                hints: [
+                    'result = 0',
+                    'for i in range (xxxx)',
+                    'result = result + K[i]',
+                    'print(result)'
+                ],
                 correctOrder: [0, 1, 2, 3],
-                expectedResult: '15'
+                expectedResult: 15,
+                starterCode: `result = 0
+for i in range (len(K)):
+    result = result + K[i]
+print(result)`
             },
+
             find_avg: {
+                label: '📊 計算平均值',
                 name: '計算平均值',
+                description: '先計算總和，再除以列表長度。',
                 testData: [10, 20, 30, 40, 50],
                 steps: [
                     '將「結果」初始化為 0',
-                    '使用迴圈遍歷列表中的每個數字',
-                    '將每個數字加到「結果」中',
-                    '計算總和除以列表長度',
-                    '迴圈結束後，輸出「結果」'
+                    '使用迴圈遍歷列表中的每個元素',
+                    '將每個元素加到「結果」中',
+                    '計算「結果」除以列表長度',
+                    '輸出平均值'
+                ],
+                hints: [
+                    'result = 0',
+                    'for i in range (xxxx)',
+                    'result = result + K[i]',
+                    'result = result / len(K)',
+                    'print(result)'
                 ],
                 correctOrder: [0, 1, 2, 3, 4],
-                expectedResult: '30'
+                expectedResult: 30,
+                starterCode: `result = 0
+for i in range (len(K)):
+    result = result + K[i]
+result = result / len(K)
+print(result)`
+            },
+
+            bubble_sort: {
+                label: '🫧 Bubble Sort（氣泡排序）',
+                name: 'Bubble Sort',
+                description: '重複比較相鄰元素，較大的值逐步「浮」到右邊。',
+                testData: [5, 1, 4, 2, 8],
+                steps: [
+                    '設定外層迴圈，進行多輪比較',
+                    '設定內層迴圈，比較相鄰元素',
+                    '如果左邊元素大於右邊元素',
+                    '交換這兩個元素（swapping）',
+                    '每輪結束後，最大值會移到右側',
+                    '所有輪次完成後，輸出排序後列表'
+                ],
+                hints: [
+                    'for i in range (xxxx)',
+                    'for i in range (xxxx)',
+                    'if K[j] > K[j+1]:',
+                    'K[j], K[j+1] = K[j+1], K[j]',
+                    '# 下一輪比較範圍縮小',
+                    'print(K)'
+                ],
+                correctOrder: [0, 1, 2, 3, 4, 5],
+                expectedResult: [1, 2, 4, 5, 8],
+                starterCode: `for i in range (len(K)-1):
+    for j in range (len(K)-1-i):
+        if K[j] > K[j+1]:
+            K[j], K[j+1] = K[j+1], K[j]
+print(K)`
+            },
+
+            selection_sort: {
+                label: '🎯 Selection Sort（選擇排序）',
+                name: 'Selection Sort',
+                description: '每一輪找最小值，放到當前位置。',
+                testData: [64, 25, 12, 22, 11],
+                steps: [
+                    '設定外層迴圈，依序處理每個位置 i',
+                    '先假設目前位置 i 是最小值位置 min_idx',
+                    '用內層迴圈從右側未排序區間尋找更小值',
+                    '如果找到更小值，更新 min_idx',
+                    '內層迴圈結束後，交換 i 與 min_idx',
+                    '全部完成後，輸出排序後列表'
+                ],
+                hints: [
+                    'for i in range (xxxx)',
+                    'min_idx = i',
+                    'for i in range (xxxx)',
+                    'if K[j] < K[min_idx]:',
+                    'K[i], K[min_idx] = K[min_idx], K[i]',
+                    'print(K)'
+                ],
+                correctOrder: [0, 1, 2, 3, 4, 5],
+                expectedResult: [11, 12, 22, 25, 64],
+                starterCode: `for i in range (len(K)-1):
+    min_idx = i
+    for j in range (i+1, len(K)):
+        if K[j] < K[min_idx]:
+            min_idx = j
+    K[i], K[min_idx] = K[min_idx], K[i]
+print(K)`
+            },
+
+            insertion_sort: {
+                label: '🧩 Insertion Sort（插入排序）',
+                name: 'Insertion Sort',
+                description: '把每個新元素插入到左側已排序區間的正確位置。',
+                testData: [12, 11, 13, 5, 6],
+                steps: [
+                    '從第二個元素開始逐一處理',
+                    '把目前值存成 key，並設定 j = i - 1',
+                    '當 j 合法且 K[j] > key 時，將 K[j] 右移',
+                    '每移動一次，j 向左遞減',
+                    '把 key 放到 K[j+1] 的位置',
+                    '全部完成後，輸出排序後列表'
+                ],
+                hints: [
+                    'for i in range (xxxx)',
+                    'key = K[i]; j = i - 1',
+                    'while j >= 0 and K[j] > key:',
+                    'j = j - 1',
+                    'K[j+1] = key',
+                    'print(K)'
+                ],
+                correctOrder: [0, 1, 2, 3, 4, 5],
+                expectedResult: [5, 6, 11, 12, 13],
+                starterCode: `for i in range (1, len(K)):
+    key = K[i]
+    j = i - 1
+    while j >= 0 and K[j] > key:
+        K[j+1] = K[j]
+        j = j - 1
+    K[j+1] = key
+print(K)`
+            },
+
+            swaping: {
+                label: '🔁 Swapping / Swaping（交換）',
+                name: 'Swapping',
+                description: '練習最基本的交換操作（把前兩個元素交換）。',
+                testData: [9, 3, 7, 1],
+                steps: [
+                    '先設定要交換的索引位置 i 與 j',
+                    '使用暫存變數 temp 保存 K[i]',
+                    '把 K[i] 改成 K[j]',
+                    '把 K[j] 改成 temp',
+                    '輸出交換後列表'
+                ],
+                hints: [
+                    'i, j = 0, 1',
+                    'temp = K[i]',
+                    'K[i] = K[j]',
+                    'K[j] = temp',
+                    'print(K)'
+                ],
+                correctOrder: [0, 1, 2, 3, 4],
+                expectedResult: [3, 9, 7, 1],
+                starterCode: `i, j = 0, 1
+temp = K[i]
+K[i] = K[j]
+K[j] = temp
+print(K)`
             }
         };
 
-        async function initPyodide() {
-            pyodide = await loadPyodide();
-            document.getElementById('codeEditor').disabled = false;
-            document.getElementById('runBtn').disabled = false;
+        function formatExpected(value) {
+            if (Array.isArray(value)) return `[${value.join(', ')}]`;
+            return String(value);
         }
 
-        function selectAlgorithm(algo) {
-            currentAlgorithm = algo;
-            document.querySelectorAll('.algorithm-btn').forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
-
-            const testData = algorithms[algo].testData;
-            document.getElementById('sampleData').textContent = `預設列表：K = [${testData.join(', ')}]`;
-            
-            renderSteps();
-            resetVisualization();
-            resetStepValidation();
+        function tryParseJsonLike(text) {
+            const t = String(text).trim();
+            if (!t) return null;
+            try { return JSON.parse(t); } catch (e) {}
+            try { return JSON.parse(t.replace(/'/g, '"')); } catch (e) {}
+            return null;
         }
 
-        function renderSteps() {
-            const steps = algorithms[currentAlgorithm].steps;
-            const shuffled = [...steps].sort(() => Math.random() - 0.5);
-            
+        function isOutputCorrect(output, expected) {
+            const out = String(output).trim();
+
+            if (typeof expected === 'number') {
+                const outNum = Number(out);
+                return !Number.isNaN(outNum) && outNum === expected;
+            }
+
+            if (Array.isArray(expected) || (expected && typeof expected === 'object')) {
+                const parsed = tryParseJsonLike(out);
+                return parsed !== null && JSON.stringify(parsed) === JSON.stringify(expected);
+            }
+
+            const exp = String(expected).trim();
+            const outNum = Number(out);
+            const expNum = Number(exp);
+
+            if (!Number.isNaN(outNum) && !Number.isNaN(expNum)) {
+                return outNum === expNum;
+            }
+
+            const outJson = tryParseJsonLike(out);
+            const expJson = tryParseJsonLike(exp);
+
+            if (outJson !== null && expJson !== null) {
+                return JSON.stringify(outJson) === JSON.stringify(expJson);
+            }
+
+            return out.replace(/\s+/g, ' ') === exp.replace(/\s+/g, ' ');
+        }
+
+        function populateAlgorithmDropdown() {
+            const select = document.getElementById('algoSelect');
+            const options = Object.entries(algorithms).map(([key, algo]) =>
+                `<option value="${key}">${algo.label}</option>`
+            ).join('');
+            select.innerHTML = options;
+            select.value = currentAlgorithm;
+        }
+
+        function onAlgorithmChange() {
+            const selected = document.getElementById('algoSelect').value;
+            selectAlgorithm(selected);
+        }
+
+        function selectAlgorithm(algoKey) {
+            currentAlgorithm = algoKey;
+            const algo = algorithms[currentAlgorithm];
+
+            document.getElementById('algoSelect').value = currentAlgorithm;
+            document.getElementById('algoDescription').textContent = `🎯 ${algo.description}`;
+            document.getElementById('sampleData').textContent = `預設列表：K = [${algo.testData.join(', ')}]`;
+            document.getElementById('expectedBox').textContent = formatExpected(algo.expectedResult);
+
+            const codeEditor = document.getElementById('codeEditor');
+            codeEditor.value = '';
+            codeEditor.placeholder = algo.starterCode;
+
+            const stepFeedback = document.getElementById('stepFeedback');
+            stepFeedback.className = 'step-feedback';
+            stepFeedback.textContent = '';
+
+            resetResultUI();
+            setOutput('等待執行...', false);
+            renderSteps(true);
+            updateEditorLockState();
+        }
+
+        function renderSteps(shuffle = true) {
+            const algo = algorithms[currentAlgorithm];
+            const total = algo.steps.length;
+
+            if (shuffle || stepsOrder.length !== total) {
+                stepsOrder = [...Array(total).keys()];
+                stepsOrder.sort(() => Math.random() - 0.5);
+            }
+
             const stepsList = document.getElementById('stepsList');
-            const stepIndexMap = new Map();
-            steps.forEach((step, idx) => {
-                stepIndexMap.set(step, idx);
-            });
-            
-            stepsList.innerHTML = shuffled.map((step) => {
-                const originalIndex = stepIndexMap.get(step);
-                const hint = getHint(currentAlgorithm, originalIndex);
+            stepsList.innerHTML = stepsOrder.map((originalIndex, pos) => {
+                const stepText = algo.steps[originalIndex];
+                const hint = (algo.hints && algo.hints[originalIndex]) ? algo.hints[originalIndex] : '提示暫無';
                 return `
-                    <div class="step-item" draggable="true" data-index="${originalIndex}">
-                        <span class="step-handle">☰</span>
-                        <span>${step}</span>
-                        <div class="hint-box" style="display: none;" id="hint-${originalIndex}">💡 ${hint}</div>
+                    <div class="step-item" draggable="true" data-pos="${pos}" data-index="${originalIndex}">
+                        <span class="step-handle" title="拖曳">☰</span>
+                        <div class="step-text">
+                            ${stepText}
+                            <div class="hint-box">💡 ${hint}</div>
+                        </div>
+                        <div class="step-actions">
+                            <button class="mini-btn" onclick="moveStep(${pos}, -1)" ${pos === 0 ? 'disabled' : ''}>↑</button>
+                            <button class="mini-btn" onclick="moveStep(${pos}, 1)" ${pos === stepsOrder.length - 1 ? 'disabled' : ''}>↓</button>
+                        </div>
                     </div>
                 `;
             }).join('');
 
-            makeStepsSortable();
+            document.getElementById('stepsWrap').classList.toggle('show-hints', hintsVisible);
+
+            attachDragHandlers();
+            checkStepsOrder(false);
         }
 
-        function getHint(algo, stepIndex) {
-            const hints = {
-                find_max: [
-                    'result = K[0]',
-                    'for number in K:',
-                    '    if number > result:',
-                    '        result = number',
-                    'print(result)'
-                ],
-                find_min: [
-                    'result = K[0]',
-                    'for number in K:',
-                    '    if number < result:',
-                    '        result = number',
-                    'print(result)'
-                ],
-                find_sum: [
-                    'result = 0',
-                    'for number in K:',
-                    '    result = result + number',
-                    'print(result)'
-                ],
-                find_avg: [
-                    'result = 0',
-                    'for number in K:',
-                    '    result = result + number',
-                    'result = result / len(K)',
-                    'print(result)'
-                ]
-            };
-            return hints[algo]?.[stepIndex] || 'No hint available';
-        }
-
-        function showAllHints() {
-            const hints = document.querySelectorAll('.hint-box');
-            hints.forEach(hint => {
-                hint.style.display = hint.style.display === 'none' ? 'block' : 'none';
-            });
-        }
-
-        function makeStepsSortable() {
+        function attachDragHandlers() {
             const items = document.querySelectorAll('.step-item');
-            let draggedItem = null;
+            let dragFrom = null;
 
             items.forEach(item => {
-                item.addEventListener('dragstart', () => {
-                    draggedItem = item;
+                item.addEventListener('dragstart', (e) => {
+                    dragFrom = Number(item.dataset.pos);
                     item.style.opacity = '0.5';
+                    e.dataTransfer.effectAllowed = 'move';
                 });
 
                 item.addEventListener('dragend', () => {
                     item.style.opacity = '1';
-                    checkStepsOrder();
                 });
 
                 item.addEventListener('dragover', (e) => {
                     e.preventDefault();
-                    if (draggedItem !== item) {
-                        item.parentNode.insertBefore(draggedItem, item);
-                    }
+                    e.dataTransfer.dropEffect = 'move';
+                });
+
+                item.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    if (dragFrom === null) return;
+                    const dragTo = Number(item.dataset.pos);
+                    if (dragFrom === dragTo) return;
+
+                    const moved = stepsOrder.splice(dragFrom, 1)[0];
+                    stepsOrder.splice(dragTo, 0, moved);
+
+                    renderSteps(false);
+                    checkStepsOrder(true);
+                    dragFrom = null;
                 });
             });
         }
 
-        function checkStepsOrder() {
+        function moveStep(position, direction) {
+            const newPos = position + direction;
+            if (newPos < 0 || newPos >= stepsOrder.length) return;
+            [stepsOrder[position], stepsOrder[newPos]] = [stepsOrder[newPos], stepsOrder[position]];
+            renderSteps(false);
+            checkStepsOrder(true);
+        }
+
+        function checkStepsOrder(showMessage = true) {
+            const algo = algorithms[currentAlgorithm];
+            const correctOrder = algo.correctOrder || [...Array(algo.steps.length).keys()];
+            const isCorrect = JSON.stringify(stepsOrder) === JSON.stringify(correctOrder);
+
             const items = document.querySelectorAll('.step-item');
-            const currentOrder = Array.from(items).map(item => parseInt(item.dataset.index));
-            const correctOrder = algorithms[currentAlgorithm].correctOrder;
-            
-            const isCorrect = JSON.stringify(currentOrder) === JSON.stringify(correctOrder);
-            
-            // Visual feedback for each step
-            items.forEach((item, index) => {
-                if (currentOrder[index] === correctOrder[index]) {
+            items.forEach((item, position) => {
+                item.classList.remove('correct', 'incorrect');
+                if (stepsOrder[position] === correctOrder[position]) {
                     item.classList.add('correct');
-                    item.classList.remove('incorrect');
                 } else {
                     item.classList.add('incorrect');
-                    item.classList.remove('correct');
                 }
             });
-            
-            const validationDiv = document.getElementById('stepsValidation');
-            const validationMsg = document.getElementById('validationMessage');
+
+            if (showMessage) {
+                const stepFeedback = document.getElementById('stepFeedback');
+                stepFeedback.className = 'step-feedback ' + (isCorrect ? 'ok' : 'bad');
+                stepFeedback.textContent = isCorrect
+                    ? '✅ 步驟順序正確！可以開始寫程式了。'
+                    : '⚠️ 目前順序仍有錯誤，請繼續調整。';
+            }
+
+            updateEditorLockState();
+            return isCorrect;
+        }
+
+        function updateEditorLockState() {
+            const algo = algorithms[currentAlgorithm];
+            const correctOrder = algo.correctOrder || [...Array(algo.steps.length).keys()];
+            const isOrderCorrect = JSON.stringify(stepsOrder) === JSON.stringify(correctOrder);
+            const canEdit = isOrderCorrect;
+            const canRun = isOrderCorrect && pyodideReady;
+
+            const lockSection = document.getElementById('lockSection');
+            const codeEditor = document.getElementById('codeEditor');
             const runBtn = document.getElementById('runBtn');
-            const editorSection = document.querySelector('.editor-section');
-            
-            if (isCorrect) {
-                const lockSection = document.getElementById('lockSection');
+
+            if (canEdit) {
                 lockSection.style.background = '#d4edda';
                 lockSection.style.borderColor = '#28a745';
-                lockSection.innerHTML = '✅ 步驟順序正確！現在你可以開始編碼了。';
-                lockSection.style.color = '#155724';
-                
-                const codeEditor = document.getElementById('codeEditor');
+                lockSection.innerHTML = `<div class="lock-title" style="color:#155724;">✅ 步驟順序正確！</div>
+                                         <div class="lock-subtitle" style="color:#155724;">你現在可以開始編碼。</div>`;
                 codeEditor.disabled = false;
                 codeEditor.style.opacity = '1';
-                
-                runBtn.disabled = false;
             } else {
-                const lockSection = document.getElementById('lockSection');
                 lockSection.style.background = '#fff3cd';
                 lockSection.style.borderColor = '#ffc107';
-                lockSection.innerHTML = '<div style="font-weight: 600; color: #856404; font-size: 1.1em;">🔒 請先完成步驟順序排列</div><div style="color: #856404; font-size: 0.9em; margin-top: 8px;">完成左側的步驟排列遊戲後，才能開始編碼</div>';
-                
-                const codeEditor = document.getElementById('codeEditor');
+                lockSection.innerHTML = `<div class="lock-title">🔒 請先完成步驟順序排列</div>
+                                         <div class="lock-subtitle">完成左側步驟排列後，才能開始編碼</div>`;
                 codeEditor.disabled = true;
                 codeEditor.style.opacity = '0.5';
-                
-                runBtn.disabled = true;
+            }
+
+            runBtn.disabled = !canRun;
+            if (isOrderCorrect && !pyodideReady) {
+                runBtn.textContent = '⏳ 載入 Python 引擎中...';
+            } else {
+                runBtn.textContent = '▶️ 執行並評分';
             }
         }
 
-        function resetStepValidation() {
-            const validationDiv = document.getElementById('stepsValidation');
-            const runBtn = document.getElementById('runBtn');
-            validationDiv.style.display = 'none';
-            runBtn.disabled = true;
+        function showAllHints() {
+            hintsVisible = !hintsVisible;
+            document.getElementById('stepsWrap').classList.toggle('show-hints', hintsVisible);
+            document.getElementById('hintsBtn').textContent = hintsVisible ? '🙈 隱藏提示' : '💡 顯示提示';
+        }
+
+        async function initPyodide() {
+            try {
+                pyodide = await loadPyodide();
+                pyodideReady = true;
+                document.getElementById('pyStatus').textContent = '✅ Python 引擎就緒';
+                document.getElementById('pyStatus').style.background = 'rgba(40,167,69,0.2)';
+            } catch (err) {
+                pyodideReady = false;
+                document.getElementById('pyStatus').textContent = '❌ Python 引擎載入失敗';
+                document.getElementById('pyStatus').style.background = 'rgba(220,53,69,0.2)';
+                console.error(err);
+            }
+            updateEditorLockState();
         }
 
         async function runCode() {
+            if (!pyodideReady || !pyodide) {
+                setOutput('❌ Python 引擎尚未就緒，請稍候。', true);
+                return;
+            }
+
+            if (!checkStepsOrder(false)) {
+                setOutput('❌ 請先完成步驟順序排列。', true);
+                return;
+            }
+
             const code = document.getElementById('codeEditor').value;
             if (!code.trim()) {
-                document.getElementById('outputBox').textContent = '❌ 請先編寫代碼';
-                document.getElementById('outputBox').classList.add('error');
+                setOutput('❌ 請先編寫代碼', true);
                 return;
             }
 
             try {
-                document.getElementById('outputBox').textContent = '⏳ 正在執行...';
-                document.getElementById('outputBox').classList.remove('error');
-                
-                let output = '';
-                
-                // 在 Pyodide 中執行代碼
-                pyodide.globals.set('output_result', []);
-                const pyCode = code.replace(/print\(/g, 'output_result.append(');
-                
-                await pyodide.runPythonAsync(pyCode);
-                
-                const results = pyodide.globals.get('output_result');
-                output = results.length > 0 ? results[results.length - 1].toString() : '程式執行完成';
-                
-                document.getElementById('outputBox').textContent = output;
-                
-                // 取得預期結果
-                const expectedResult = algorithms[currentAlgorithm].expectedResult;
-                
-                document.getElementById('expectedBox').textContent = expectedResult;
-                
-                // 評分邏輯
-                const isCorrect = output.trim() === expectedResult.trim();
-                showResult(isCorrect);
+                setOutput('⏳ 正在執行...', false);
+                resetResultUI();
 
+                const algo = algorithms[currentAlgorithm];
+                const data = algo.testData;
+                const expectedResult = algo.expectedResult;
+                document.getElementById('expectedBox').textContent = formatExpected(expectedResult);
+
+                const wrappedCode = `
+K = ${JSON.stringify(data)}
+output_result = []
+
+def print(*args, **kwargs):
+    output_result.append(" ".join(str(a) for a in args))
+
+${code}
+
+__final_output = output_result[-1] if len(output_result) > 0 else ""
+`;
+
+                await pyodide.runPythonAsync(wrappedCode);
+
+                let output = '';
+                const raw = pyodide.globals.get('__final_output');
+                output = String(raw ?? '').trim();
+                if (raw && typeof raw.destroy === 'function') raw.destroy();
+
+                setOutput(output || '程式執行完成（無 print 輸出）', false);
+
+                const isCorrect = isOutputCorrect(output, expectedResult);
+                showResult(isCorrect);
             } catch (error) {
-                document.getElementById('outputBox').textContent = '❌ 錯誤:\n' + error.message;
-                document.getElementById('outputBox').classList.add('error');
+                setOutput('❌ 錯誤:\n' + error.message, true);
                 showResult(false);
             }
         }
 
-        function renderExecutionView(code) {
-            const lines = code.trim().split('\n');
-            const view = document.getElementById('executionView');
-            view.innerHTML = lines.map((line, i) => `
-                <div style="padding: 4px 0;">
-                    <span style="color: #999; margin-right: 10px;">L${i + 1}</span>
-                    <span>${escapeHtml(line)}</span>
-                </div>
-            `).join('');
-        }
-
-        function updateVariablesView(code) {
-            try {
-                const view = document.getElementById('variablesView');
-                const ns = pyodide.globals.toJs();
-                
-                const vars = [];
-                for (let [key, value] of Object.entries(ns)) {
-                    if (!key.startsWith('_') && typeof value !== 'function') {
-                        vars.push({ name: key, value: String(value).substring(0, 100) });
-                    }
-                }
-
-                if (vars.length === 0) {
-                    view.innerHTML = '<span style="color: #999;">無變數</span>';
-                } else {
-                    view.innerHTML = vars.map(v => `
-                        <div class="variable-item">
-                            <span class="var-name">${v.name}</span>
-                            <span class="var-value">${v.value}</span>
-                        </div>
-                    `).join('');
-                }
-            } catch (e) {
-                console.log('變數查看失敗:', e);
-            }
-        }
-
-        function resetVisualization() {
-            currentStep = 0;
-            executionSteps = [];
-            document.getElementById('stepNumber').textContent = '0';
-            document.getElementById('totalSteps').textContent = '0';
-            document.getElementById('variablesView').textContent = '等待執行...';
-            document.getElementById('executionView').textContent = '';
-            document.getElementById('outputBox').textContent = '等待執行...';
-            document.getElementById('outputBox').classList.remove('error');
-            document.getElementById('prevBtn').disabled = true;
-            document.getElementById('nextBtn').disabled = true;
-        }
-
-        function nextStep() {
-            // TODO: 實現逐步執行
-        }
-
-        function previousStep() {
-            // TODO: 實現返回上一步
+        function setOutput(text, isError = false) {
+            const outputBox = document.getElementById('outputBox');
+            outputBox.textContent = text;
+            outputBox.classList.toggle('error', !!isError);
         }
 
         function clearCode() {
             document.getElementById('codeEditor').value = '';
-            resetVisualization();
+            resetResultUI();
+            setOutput('等待執行...', false);
         }
 
         function resetSteps() {
-            renderSteps();
-            resetStepValidation();
-            
-            const lockSection = document.getElementById('lockSection');
-            lockSection.style.background = '#fff3cd';
-            lockSection.style.borderColor = '#ffc107';
-            lockSection.innerHTML = '<div style="font-weight: 600; color: #856404; font-size: 1.1em;">🔒 請先完成步驟順序排列</div><div style="color: #856404; font-size: 0.9em; margin-top: 8px;">完成左側的步驟排列遊戲後，才能開始編碼</div>';
-            
-            const codeEditor = document.getElementById('codeEditor');
-            codeEditor.disabled = true;
-            codeEditor.style.opacity = '0.5';
-            document.getElementById('runBtn').disabled = true;
+            renderSteps(true);
+            const stepFeedback = document.getElementById('stepFeedback');
+            stepFeedback.className = 'step-feedback';
+            stepFeedback.textContent = '';
+            updateEditorLockState();
+            resetResultUI();
+            setOutput('等待執行...', false);
         }
 
         function showResult(isCorrect) {
             const panel = document.getElementById('resultPanel');
             const icon = document.getElementById('resultIcon');
             const text = document.getElementById('resultText');
-            
+
             if (isCorrect) {
                 panel.style.background = '#d4edda';
                 panel.style.borderLeft = '6px solid #28a745';
@@ -748,23 +1048,19 @@
                 icon.textContent = '❌';
                 text.textContent = '輸出不匹配，請檢查代碼';
             }
+
             panel.style.display = 'block';
         }
 
-        function escapeHtml(text) {
-            const map = {
-                '&': '&amp;',
-                '<': '&lt;',
-                '>': '&gt;',
-                '"': '&quot;',
-                "'": '&#039;'
-            };
-            return text.replace(/[&<>"']/g, m => map[m]);
+        function resetResultUI() {
+            const panel = document.getElementById('resultPanel');
+            panel.style.display = 'none';
         }
 
-        window.addEventListener('load', () => {
-            initPyodide();
-            renderSteps();
+        window.addEventListener('load', async () => {
+            populateAlgorithmDropdown();
+            selectAlgorithm(currentAlgorithm);
+            await initPyodide();
         });
     </script>
 </body>
