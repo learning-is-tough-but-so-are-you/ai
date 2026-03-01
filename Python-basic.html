@@ -261,6 +261,7 @@
             font-family: 'Courier New', monospace;
             font-size: 0.9rem;
             word-break: break-word;
+            line-height: 1.45;
         }
 
         .lock-section {
@@ -602,7 +603,7 @@ print(result)`
                 ],
                 hints: [
                     'for i in range (xxxx)',
-                    'for i in range (xxxx)',
+                    'for j in range (xxxx)',
                     'if K[j] > K[j+1]:',
                     'K[j], K[j+1] = K[j+1], K[j]',
                     '# 下一輪比較範圍縮小',
@@ -633,7 +634,7 @@ print(K)`
                 hints: [
                     'for i in range (xxxx)',
                     'min_idx = i',
-                    'for i in range (xxxx)',
+                    'for j in range (xxxx)',
                     'if K[j] < K[min_idx]:',
                     'K[i], K[min_idx] = K[min_idx], K[i]',
                     'print(K)'
@@ -663,7 +664,7 @@ print(K)`
                     '全部完成後，輸出排序後列表'
                 ],
                 hints: [
-                    'for i in range (xxxx)',
+                    'for i in range (1, len(K))',
                     'key = K[i]; j = i - 1',
                     'while j >= 0 and K[j] > key:',
                     'j = j - 1',
@@ -708,12 +709,62 @@ temp = K[i]
 K[i] = K[j]
 K[j] = temp
 print(K)`
+            },
+
+            binary_search: {
+                label: '🔍 Binary Search（二分搜尋）',
+                name: 'Binary Search',
+                description: '在「已排序」列表中，每次砍半搜尋目標值。',
+                testData: [1, 3, 5, 7, 9, 11, 13],
+                target: 7,
+                steps: [
+                    '設定 left = 0 與 right = len(K)-1',
+                    '當 left <= right 時重複執行',
+                    '計算中間索引 mid',
+                    '若 K[mid] == TARGET，輸出 mid 並結束',
+                    '若 K[mid] < TARGET，將 left 移到 mid + 1',
+                    '否則將 right 移到 mid - 1',
+                    '若迴圈結束仍沒找到，輸出 -1'
+                ],
+                hints: [
+                    'left, right = 0, len(K)-1',
+                    'while left <= right:',
+                    'mid = (left + right) // 2',
+                    'if K[mid] == TARGET: print(mid); break',
+                    'elif K[mid] < TARGET: left = mid + 1',
+                    'else: right = mid - 1',
+                    'print(-1)'
+                ],
+                correctOrder: [0, 1, 2, 3, 4, 5, 6],
+                expectedResult: 3,
+                starterCode: `left, right = 0, len(K)-1
+found = False
+
+while left <= right:
+    mid = (left + right) // 2
+    if K[mid] == TARGET:
+        print(mid)
+        found = True
+        break
+    elif K[mid] < TARGET:
+        left = mid + 1
+    else:
+        right = mid - 1
+
+if not found:
+    print(-1)`
             }
         };
 
         function formatExpected(value) {
             if (Array.isArray(value)) return `[${value.join(', ')}]`;
             return String(value);
+        }
+
+        function formatSampleData(algo) {
+            let text = `預設列表：K = [${algo.testData.join(', ')}]`;
+            if (algo.target !== undefined) text += `\n目標值：TARGET = ${algo.target}`;
+            return text;
         }
 
         function tryParseJsonLike(text) {
@@ -775,7 +826,7 @@ print(K)`
 
             document.getElementById('algoSelect').value = currentAlgorithm;
             document.getElementById('algoDescription').textContent = `🎯 ${algo.description}`;
-            document.getElementById('sampleData').textContent = `預設列表：K = [${algo.testData.join(', ')}]`;
+            document.getElementById('sampleData').textContent = formatSampleData(algo);
             document.getElementById('expectedBox').textContent = formatExpected(algo.expectedResult);
 
             const codeEditor = document.getElementById('codeEditor');
@@ -979,9 +1030,13 @@ print(K)`
                 const expectedResult = algo.expectedResult;
                 document.getElementById('expectedBox').textContent = formatExpected(expectedResult);
 
+                const targetLine = algo.target !== undefined
+                    ? `TARGET = ${JSON.stringify(algo.target)}\n`
+                    : '';
+
                 const wrappedCode = `
 K = ${JSON.stringify(data)}
-output_result = []
+${targetLine}output_result = []
 
 def print(*args, **kwargs):
     output_result.append(" ".join(str(a) for a in args))
