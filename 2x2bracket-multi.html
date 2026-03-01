@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>多項式展開練習（兩括號相乘）</title>
+  <style>
+    :root {
+      --bg1: #4f46e5;
+      --bg2: #7c3aed;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --ok: #16a34a;
+      --bad: #dc2626;
+      --warn: #d97706;
+      --line: #e5e7eb;
+      --soft: #f8fafc;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "Noto Sans TC", "Microsoft JhengHei", Arial, sans-serif;
+      background: linear-gradient(135deg, var(--bg1), var(--bg2));
+      min-height: 100vh;
+      padding: 14px;
+      color: var(--text);
+    }
+
+    .app {
+      max-width: 1100px;
+      margin: 0 auto;
+      background: var(--card);
+      border-radius: 14px;
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.2);
+      overflow: hidden;
+    }
+
+    .header {
+      color: #fff;
+      background: linear-gradient(135deg, rgba(79,70,229,0.95), rgba(124,58,237,0.95));
+      padding: 18px 16px;
+    }
+
+    .header h1 {
+      margin: 0 0 6px;
+      font-size: 1.35rem;
+      line-height: 1.2;
+    }
+
+    .header p {
+      margin: 0;
+      opacity: 0.95;
+      font-size: 0.95rem;
+    }
+
+    .content {
+      padding: 14px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .panel {
+      background: var(--soft);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px;
+    }
+
+    .title {
+      margin: 0 0 10px;
+      font-size: 1rem;
+      font-weight: 700;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr auto;
+      gap: 8px;
+      align-items: end;
+    }
+
+    label {
+      font-size: 0.85rem;
+      color: var(--muted);
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    select, input[type="number"] {
+      width: 100%;
+      min-height: 42px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 1rem;
+      background: #fff;
+    }
+
+    .btn {
+      min-height: 42px;
+      border: none;
+      border-radius: 8px;
+      padding: 9px 12px;
+      font-weight: 700;
+      cursor: pointer;
+      color: #fff;
+      background: #2563eb;
+    }
+
+    .btn.secondary { background: #334155; }
+    .btn.warn { background: #d97706; }
+    .btn.ok { background: #16a34a; }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .problem {
+      margin-top: 10px;
+      padding: 12px;
+      background: #eef2ff;
+      border: 1px solid #c7d2fe;
+      border-radius: 10px;
+      font-size: 1.25rem;
+      font-weight: 700;
+      text-align: center;
+      word-break: break-word;
+    }
+
+    .mini {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 0.88rem;
+      line-height: 1.35;
+    }
+
+    .step-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .step {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px;
+    }
+
+    .step h4 {
+      margin: 0 0 8px;
+      font-size: 0.9rem;
+    }
+
+    .expr {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.95rem;
+      margin-bottom: 8px;
+      color: #111827;
+    }
+
+    .inline {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .inline input {
+      max-width: 130px;
+    }
+
+    .final-box {
+      margin-top: 10px;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px;
+    }
+
+    .final-row {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(70px, 1fr));
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .actions {
+      margin-top: 12px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .feedback {
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: 8px;
+      font-weight: 700;
+      display: none;
+      line-height: 1.35;
+    }
+
+    .feedback.ok {
+      display: block;
+      background: #dcfce7;
+      color: #14532d;
+      border-left: 5px solid var(--ok);
+    }
+
+    .feedback.bad {
+      display: block;
+      background: #fee2e2;
+      color: #7f1d1d;
+      border-left: 5px solid var(--bad);
+    }
+
+    .feedback.warn {
+      display: block;
+      background: #fef3c7;
+      color: #78350f;
+      border-left: 5px solid var(--warn);
+    }
+
+    .good { border-color: var(--ok) !important; background: #f0fdf4 !important; }
+    .bad  { border-color: var(--bad) !important; background: #fff1f2 !important; }
+
+    .solution {
+      margin-top: 10px;
+      display: none;
+      background: #ecfeff;
+      border: 1px solid #a5f3fc;
+      border-radius: 10px;
+      padding: 10px;
+      font-size: 0.95rem;
+      line-height: 1.45;
+    }
+
+    .solution code {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      padding: 2px 6px;
+      border-radius: 6px;
+    }
+
+    @media (max-width: 900px) {
+      .content { grid-template-columns: 1fr; }
+      .controls { grid-template-columns: 1fr 1fr; }
+      .controls .btn { grid-column: 1 / -1; }
+    }
+
+    @media (max-width: 560px) {
+      .step-grid { grid-template-columns: 1fr; }
+      .problem { font-size: 1.1rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="header">
+      <h1>多項式展開練習：兩個括號相乘</h1>
+      <p>用 FOIL（首外內末）或分配律一步步展開</p>
+    </div>
+
+    <div class="content">
+      <section class="panel">
+        <h2 class="title">1）產生題目</h2>
+
+        <div class="controls">
+          <div>
+            <label for="difficulty">難度</label>
+            <select id="difficulty">
+              <option value="easy">簡單（正數、小數字）</option>
+              <option value="medium" selected>中等（含負數）</option>
+              <option value="hard">困難（範圍更大）</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="variable">變數</label>
+            <select id="variable">
+              <option value="x" selected>x</option>
+              <option value="y">y</option>
+            </select>
+          </div>
+
+          <button class="btn" id="newBtn">新題目</button>
+        </div>
+
+        <div class="problem" id="problemText">(2x + 3)(x - 4)</div>
+        <div class="mini">
+          目標：化簡成標準形式 <strong>Ax² + Bx + C</strong>（或你選的變數）。
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2 class="title">2）FOIL 分步作答</h2>
+
+        <div class="step-grid">
+          <div class="step" id="step1Card">
+            <h4>首項 First</h4>
+            <div class="expr" id="step1Expr">2x × x = ?x²</div>
+            <div class="inline">
+              <input type="number" id="step1Input" placeholder="填係數" />
+              <span>（x² 的係數）</span>
+            </div>
+          </div>
+
+          <div class="step" id="step2Card">
+            <h4>外項 Outer</h4>
+            <div class="expr" id="step2Expr">2x × (-4) = ?x</div>
+            <div class="inline">
+              <input type="number" id="step2Input" placeholder="填係數" />
+              <span>（x 的係數）</span>
+            </div>
+          </div>
+
+          <div class="step" id="step3Card">
+            <h4>內項 Inner</h4>
+            <div class="expr" id="step3Expr">3 × x = ?x</div>
+            <div class="inline">
+              <input type="number" id="step3Input" placeholder="填係數" />
+              <span>（x 的係數）</span>
+            </div>
+          </div>
+
+          <div class="step" id="step4Card">
+            <h4>末項 Last</h4>
+            <div class="expr" id="step4Expr">3 × (-4) = ?</div>
+            <div class="inline">
+              <input type="number" id="step4Input" placeholder="填常數" />
+              <span>（常數項）</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="final-box" id="finalCard">
+          <strong>最後答案（標準式）：</strong>
+          <div class="mini" id="finalTemplate">Ax² + Bx + C</div>
+
+          <div class="final-row">
+            <div>
+              <label for="AInput">A</label>
+              <input type="number" id="AInput" placeholder="A" />
+            </div>
+            <div>
+              <label for="BInput">B</label>
+              <input type="number" id="BInput" placeholder="B" />
+            </div>
+            <div>
+              <label for="CInput">C</label>
+              <input type="number" id="CInput" placeholder="C" />
+            </div>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button class="btn ok" id="checkBtn">檢查答案</button>
+          <button class="btn secondary" id="resetBtn">清空輸入</button>
+          <button class="btn warn" id="showBtn">顯示解答</button>
+        </div>
+
+        <div class="feedback" id="feedback"></div>
+        <div class="solution" id="solution"></div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const state = {
+      a: 2, b: 3, c: 1, d: -4,
+      variable: "x"
+    };
+
+    const el = {
+      difficulty: document.getElementById("difficulty"),
+      variable: document.getElementById("variable"),
+      newBtn: document.getElementById("newBtn"),
+      problemText: document.getElementById("problemText"),
+
+      step1Expr: document.getElementById("step1Expr"),
+      step2Expr: document.getElementById("step2Expr"),
+      step3Expr: document.getElementById("step3Expr"),
+      step4Expr: document.getElementById("step4Expr"),
+
+      step1Input: document.getElementById("step1Input"),
+      step2Input: document.getElementById("step2Input"),
+      step3Input: document.getElementById("step3Input"),
+      step4Input: document.getElementById("step4Input"),
+
+      AInput: document.getElementById("AInput"),
+      BInput: document.getElementById("BInput"),
+      CInput: document.getElementById("CInput"),
+
+      step1Card: document.getElementById("step1Card"),
+      step2Card: document.getElementById("step2Card"),
+      step3Card: document.getElementById("step3Card"),
+      step4Card: document.getElementById("step4Card"),
+      finalCard: document.getElementById("finalCard"),
+
+      finalTemplate: document.getElementById("finalTemplate"),
+      checkBtn: document.getElementById("checkBtn"),
+      resetBtn: document.getElementById("resetBtn"),
+      showBtn: document.getElementById("showBtn"),
+      feedback: document.getElementById("feedback"),
+      solution: document.getElementById("solution")
+    };
+
+    function randInt(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function nonZero(min, max) {
+      let n = 0;
+      while (n === 0) n = randInt(min, max);
+      return n;
+    }
+
+    function pickCoeffs() {
+      const mode = el.difficulty.value;
+      if (mode === "easy") {
+        state.a = randInt(1, 6);
+        state.b = randInt(1, 9);
+        state.c = randInt(1, 6);
+        state.d = randInt(1, 9);
+      } else if (mode === "medium") {
+        state.a = nonZero(-8, 8);
+        state.b = randInt(-9, 9);
+        state.c = nonZero(-8, 8);
+        state.d = randInt(-9, 9);
+      } else {
+        state.a = nonZero(-12, 12);
+        state.b = randInt(-15, 15);
+        state.c = nonZero(-12, 12);
+        state.d = randInt(-15, 15);
+      }
+      state.variable = el.variable.value;
+    }
+
+    function coeffVar(k, v) {
+      if (k === 1) return v;
+      if (k === -1) return "-" + v;
+      return k + v;
+    }
+
+    function linearText(a, b, v) {
+      const first = coeffVar(a, v);
+      const sign = b >= 0 ? " + " : " - ";
+      return first + sign + Math.abs(b);
+    }
+
+    function termText(k, label) {
+      if (k === 0) return "";
+      const abs = Math.abs(k);
+      const coeffPart = (abs === 1 && label) ? "" : String(abs);
+      return (k < 0 ? "-" : "") + coeffPart + label;
+    }
+
+    function polyText(A, B, C, v) {
+      const terms = [];
+      const t1 = termText(A, v + "²");
+      const t2 = termText(B, v);
+      const t3 = termText(C, "");
+
+      [t1, t2, t3].forEach(t => {
+        if (!t) return;
+        if (terms.length === 0) {
+          terms.push(t);
+        } else {
+          terms.push(t.startsWith("-") ? " - " + t.slice(1) : " + " + t);
+        }
+      });
+
+      return terms.length ? terms.join("") : "0";
+    }
+
+    function expected() {
+      const ac = state.a * state.c;
+      const ad = state.a * state.d;
+      const bc = state.b * state.c;
+      const bd = state.b * state.d;
+      const A = ac;
+      const B = ad + bc;
+      const C = bd;
+      return { ac, ad, bc, bd, A, B, C };
+    }
+
+    function setProblemUI() {
+      const v = state.variable;
+      el.problemText.textContent = "(" + linearText(state.a, state.b, v) + ")(" + linearText(state.c, state.d, v) + ")";
+      el.step1Expr.textContent = coeffVar(state.a, v) + " × " + coeffVar(state.c, v) + " = ?" + v + "²";
+      el.step2Expr.textContent = coeffVar(state.a, v) + " × (" + state.d + ") = ?" + v;
+      el.step3Expr.textContent = "(" + state.b + ") × " + coeffVar(state.c, v) + " = ?" + v;
+      el.step4Expr.textContent = "(" + state.b + ") × (" + state.d + ") = ?";
+      el.finalTemplate.textContent = "A" + v + "² + B" + v + " + C";
+    }
+
+    function clearInputs() {
+      [el.step1Input, el.step2Input, el.step3Input, el.step4Input, el.AInput, el.BInput, el.CInput]
+        .forEach(inp => inp.value = "");
+
+      [el.step1Card, el.step2Card, el.step3Card, el.step4Card, el.finalCard].forEach(card => {
+        card.classList.remove("good", "bad");
+      });
+
+      el.feedback.className = "feedback";
+      el.feedback.textContent = "";
+      el.solution.style.display = "none";
+      el.solution.innerHTML = "";
+    }
+
+    function markCard(card, ok) {
+      card.classList.remove("good", "bad");
+      card.classList.add(ok ? "good" : "bad");
+    }
+
+    function numVal(input) {
+      const t = String(input.value).trim();
+      if (t === "") return null;
+      const n = Number(t);
+      return Number.isFinite(n) ? n : null;
+    }
+
+    function checkAnswers() {
+      const exp = expected();
+
+      const u1 = numVal(el.step1Input);
+      const u2 = numVal(el.step2Input);
+      const u3 = numVal(el.step3Input);
+      const u4 = numVal(el.step4Input);
+      const uA = numVal(el.AInput);
+      const uB = numVal(el.BInput);
+      const uC = numVal(el.CInput);
+
+      const allFilled = [u1,u2,u3,u4,uA,uB,uC].every(v => v !== null);
+      if (!allFilled) {
+        el.feedback.className = "feedback warn";
+        el.feedback.textContent = "請先把所有欄位填完再檢查。";
+        return;
+      }
+
+      const s1 = u1 === exp.ac;
+      const s2 = u2 === exp.ad;
+      const s3 = u3 === exp.bc;
+      const s4 = u4 === exp.bd;
+      const sf = (uA === exp.A && uB === exp.B && uC === exp.C);
+
+      markCard(el.step1Card, s1);
+      markCard(el.step2Card, s2);
+      markCard(el.step3Card, s3);
+      markCard(el.step4Card, s4);
+      markCard(el.finalCard, sf);
+
+      const score = [s1,s2,s3,s4,sf].filter(Boolean).length;
+      if (score === 5) {
+        el.feedback.className = "feedback ok";
+        el.feedback.textContent = "太棒了！全部正確 🎉 最終答案：" + polyText(exp.A, exp.B, exp.C, state.variable);
+      } else {
+        el.feedback.className = "feedback bad";
+        el.feedback.textContent = "目前答對 " + score + "/5 個部分。請修正紅色區塊後再試一次。";
+      }
+    }
+
+    function showSolution() {
+      const exp = expected();
+      const v = state.variable;
+      const finalPoly = polyText(exp.A, exp.B, exp.C, v);
+
+      el.solution.innerHTML =
+        "<strong>參考解答（步驟）</strong><br>" +
+        "首項 First：<code>" + coeffVar(state.a, v) + " × " + coeffVar(state.c, v) + " = " + exp.ac + v + "²</code><br>" +
+        "外項 Outer：<code>" + coeffVar(state.a, v) + " × (" + state.d + ") = " + exp.ad + v + "</code><br>" +
+        "內項 Inner：<code>(" + state.b + ") × " + coeffVar(state.c, v) + " = " + exp.bc + v + "</code><br>" +
+        "末項 Last：<code>(" + state.b + ") × (" + state.d + ") = " + exp.bd + "</code><br><br>" +
+        "合併中間同類項：<code>" + exp.ad + v + " + " + exp.bc + v + " = " + exp.B + v + "</code><br>" +
+        "所以最後答案：<code>" + finalPoly + "</code>";
+
+      el.solution.style.display = "block";
+    }
+
+    function newQuestion() {
+      pickCoeffs();
+      setProblemUI();
+      clearInputs();
+    }
+
+    el.newBtn.addEventListener("click", newQuestion);
+    el.variable.addEventListener("change", newQuestion);
+    el.checkBtn.addEventListener("click", checkAnswers);
+    el.resetBtn.addEventListener("click", clearInputs);
+    el.showBtn.addEventListener("click", showSolution);
+
+    // 初始化
+    newQuestion();
+  </script>
+</body>
+</html>
