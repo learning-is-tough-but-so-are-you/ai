@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Comparative & Superlative Infinite Game</title>
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --primary: #2563eb;
+      --ok: #15803d;
+      --bad: #b91c1c;
+      --soft: #dbe3ef;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Inter", "Segoe UI", Arial, sans-serif;
+      background: linear-gradient(180deg, #eef3fb, #f8fbff);
+      color: var(--text);
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 16px;
+    }
+    .app {
+      width: 100%;
+      max-width: 820px;
+      background: var(--card);
+      border: 1px solid var(--soft);
+      border-radius: 16px;
+      box-shadow: 0 10px 28px rgba(31, 41, 55, 0.08);
+      overflow: hidden;
+    }
+    .header {
+      padding: 16px;
+      background: #f8fbff;
+      border-bottom: 1px solid var(--soft);
+      display: grid;
+      gap: 8px;
+    }
+    .title { margin: 0; font-size: 1.2rem; }
+    .stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      font-size: 0.92rem;
+      color: var(--muted);
+    }
+    .chip {
+      background: #eef2ff;
+      border: 1px solid #c7d2fe;
+      color: #3730a3;
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-weight: 600;
+    }
+    .body { padding: 16px; display: grid; gap: 14px; }
+    .card {
+      border: 1px solid var(--soft);
+      border-radius: 12px;
+      padding: 14px;
+      background: #fff;
+    }
+    .label {
+      font-size: 0.88rem;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .word {
+      font-size: 2rem;
+      font-weight: 800;
+      margin: 0;
+      letter-spacing: 0.3px;
+    }
+    .row { display: grid; gap: 10px; }
+    .row-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .choice-btn {
+      min-height: 44px;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      background: #f8fafc;
+      color: #0f172a;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .choice-btn.active {
+      border-color: #93c5fd;
+      background: #eff6ff;
+      color: #1d4ed8;
+    }
+    input {
+      width: 100%;
+      min-height: 44px;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 1rem;
+    }
+    .small {
+      font-size: 0.86rem;
+      color: var(--muted);
+      margin: 0;
+    }
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    button.main, button.ghost {
+      min-height: 44px;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    button.main {
+      border: none;
+      background: var(--primary);
+      color: white;
+    }
+    button.ghost {
+      border: 1px solid #cbd5e1;
+      background: #f8fafc;
+      color: #0f172a;
+    }
+    .feedback {
+      display: none;
+      white-space: pre-line;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-weight: 700;
+      font-size: 0.95rem;
+    }
+    .feedback.show { display: block; }
+    .feedback.ok {
+      background: #dcfce7;
+      color: #14532d;
+      border-left: 4px solid var(--ok);
+    }
+    .feedback.bad {
+      background: #fee2e2;
+      color: #7f1d1d;
+      border-left: 4px solid var(--bad);
+    }
+    .feedback.warn {
+      display: block;
+      background: #fff7ed;
+      color: #9a3412;
+      border-left: 4px solid #ea580c;
+    }
+
+    @media (max-width: 620px) {
+      .word { font-size: 1.6rem; }
+      .row-2 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="header">
+      <h1 class="title">Comparative & Superlative Game (Infinite Rotation)</h1>
+      <div class="stats">
+        <span class="chip" id="bankChip">Word bank: 0</span>
+        <span class="chip" id="answeredChip">Answered: 0</span>
+        <span class="chip" id="scoreChip">Score: 0</span>
+        <span class="chip" id="streakChip">Streak: 0</span>
+      </div>
+    </header>
+
+    <section class="body">
+      <div class="card">
+        <div class="label">Base adjective</div>
+        <p class="word" id="baseWord">-</p>
+      </div>
+
+      <div class="card row">
+        <div class="label">Step 1: Which pattern?</div>
+        <div class="row-2">
+          <button class="choice-btn" id="choiceEr" type="button">Add <strong>-er / -est</strong></button>
+          <button class="choice-btn" id="choiceMore" type="button">Use <strong>more / most</strong></button>
+        </div>
+      </div>
+
+      <div class="card row">
+        <div class="label">Step 2: Type both forms</div>
+        <input id="comparativeInput" type="text" placeholder="Comparative + than (e.g., smaller than / more careful than)" />
+        <input id="superlativeInput" type="text" placeholder="Superlative with THE (e.g., the smallest / the most careful)" />
+        <p class="small">Comparative must include <strong>than</strong>. Superlative must include <strong>the</strong>.</p>
+      </div>
+
+      <div class="actions">
+        <button class="main" id="submitBtn" type="button">Check Answer</button>
+        <button class="ghost" id="nextBtn" type="button">Next Word</button>
+        <button class="ghost" id="restartBtn" type="button">Reset Stats</button>
+      </div>
+
+      <div id="feedback" class="feedback"></div>
+    </section>
+  </main>
+
+  <!-- External bank file under same root -->
+  <script src="./comparative_bank.js"></script>
+
+  <script>
+    // Expects: window.COMPARATIVE_BANK from comparative_bank.js
+    const rawBank = Array.isArray(window.COMPARATIVE_BANK) ? window.COMPARATIVE_BANK : [];
+
+    // Basic validation so the app won't break if one item is malformed.
+    const bank = rawBank.filter(item =>
+      item &&
+      typeof item.base === "string" &&
+      (item.method === "erest" || item.method === "moremost") &&
+      typeof item.comparative === "string" &&
+      typeof item.superlative === "string"
+    );
+
+    let rotation = [];
+    let current = null;
+    let selectedMethod = "";
+    let score = 0;
+    let answered = 0;
+    let streak = 0;
+
+    const baseWord = document.getElementById("baseWord");
+    const bankChip = document.getElementById("bankChip");
+    const answeredChip = document.getElementById("answeredChip");
+    const scoreChip = document.getElementById("scoreChip");
+    const streakChip = document.getElementById("streakChip");
+    const choiceEr = document.getElementById("choiceEr");
+    const choiceMore = document.getElementById("choiceMore");
+    const comparativeInput = document.getElementById("comparativeInput");
+    const superlativeInput = document.getElementById("superlativeInput");
+    const submitBtn = document.getElementById("submitBtn");
+    const nextBtn = document.getElementById("nextBtn");
+    const restartBtn = document.getElementById("restartBtn");
+    const feedback = document.getElementById("feedback");
+
+    function shuffle(arr) {
+      const copy = [...arr];
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    }
+
+    function normalize(s) {
+      return s.trim().toLowerCase().replace(/\s+/g, " ");
+    }
+
+    function setMethod(method) {
+      selectedMethod = method;
+      choiceEr.classList.toggle("active", method === "erest");
+      choiceMore.classList.toggle("active", method === "moremost");
+    }
+
+    function showFeedback(type, text) {
+      feedback.className = "feedback show " + type;
+      feedback.textContent = text;
+    }
+
+    function clearFeedback() {
+      feedback.className = "feedback";
+      feedback.textContent = "";
+    }
+
+    function updateHeader() {
+      bankChip.textContent = `Word bank: ${bank.length}`;
+      answeredChip.textContent = `Answered: ${answered}`;
+      scoreChip.textContent = `Score: ${score}`;
+      streakChip.textContent = `Streak: ${streak}`;
+    }
+
+    function refillRotation() {
+      rotation = shuffle(bank);
+    }
+
+    function getNextWord() {
+      if (rotation.length === 0) refillRotation();
+      return rotation.pop();
+    }
+
+    function loadNewQuestion() {
+      if (bank.length === 0) {
+        baseWord.textContent = "-";
+        submitBtn.disabled = true;
+        nextBtn.disabled = true;
+        showFeedback(
+          "warn",
+          'No valid words found.\nMake sure "./comparative_bank.js" exists and defines window.COMPARATIVE_BANK.'
+        );
+        updateHeader();
+        return;
+      }
+
+      current = getNextWord();
+      baseWord.textContent = current.base;
+      comparativeInput.value = "";
+      superlativeInput.value = "";
+      setMethod("");
+      clearFeedback();
+      submitBtn.disabled = false;
+      nextBtn.disabled = false;
+      comparativeInput.focus();
+      updateHeader();
+    }
+
+    function checkAnswer() {
+      if (!current) return;
+
+      const userComp = normalize(comparativeInput.value);
+      const userSup = normalize(superlativeInput.value);
+
+      if (!selectedMethod) {
+        showFeedback("bad", "Please choose a pattern first: -er/-est or more/most.");
+        return;
+      }
+      if (!userComp || !userSup) {
+        showFeedback("bad", "Please type both answers.");
+        return;
+      }
+      if (!userComp.endsWith(" than")) {
+        showFeedback("bad", 'Comparative must include "than" (example: "smaller than").');
+        return;
+      }
+
+      const correctComparative = `${current.comparative} than`;
+      const methodOk = selectedMethod === current.method;
+      const compOk = userComp === normalize(correctComparative);
+      const supOk = userSup === normalize(current.superlative);
+
+      let earned = 0;
+      if (methodOk) earned += 1;
+      if (compOk) earned += 1;
+      if (supOk) earned += 1;
+
+      score += earned;
+      answered += 1;
+
+      const perfect = methodOk && compOk && supOk;
+      if (perfect) {
+        streak += 1;
+        showFeedback("ok", "Excellent! ✅\n+3 points");
+      } else {
+        streak = 0;
+        const pattern = current.method === "erest" ? "-er/-est" : "more/most";
+        showFeedback(
+          "bad",
+          `Good try!\nYou got +${earned} point(s).\n\nCorrect pattern: ${pattern}\nComparative: ${correctComparative}\nSuperlative: ${current.superlative}`
+        );
+      }
+
+      submitBtn.disabled = true;
+      updateHeader();
+    }
+
+    function resetStats() {
+      score = 0;
+      answered = 0;
+      streak = 0;
+      refillRotation();
+      loadNewQuestion();
+    }
+
+    choiceEr.addEventListener("click", () => setMethod("erest"));
+    choiceMore.addEventListener("click", () => setMethod("moremost"));
+    submitBtn.addEventListener("click", checkAnswer);
+    nextBtn.addEventListener("click", loadNewQuestion);
+    restartBtn.addEventListener("click", resetStats);
+
+    comparativeInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") superlativeInput.focus();
+    });
+
+    superlativeInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !submitBtn.disabled) checkAnswer();
+    });
+
+    resetStats();
+  </script>
+</body>
+</html>
