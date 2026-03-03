@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DSE ICT SQL 自學練習</title>
+  <style>
+    :root{
+      --bg:#f3f6fb;
+      --card:#ffffff;
+      --text:#0f172a;
+      --muted:#64748b;
+      --line:#dbe5f1;
+      --primary:#2563eb;
+      --ok:#15803d;
+      --bad:#b91c1c;
+      --warn:#b45309;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:"PingFang TC","Microsoft JhengHei","Noto Sans TC",Arial,sans-serif;
+      color:var(--text);
+      background:linear-gradient(180deg,#edf2fb,#f8fbff);
+    }
+    .app{
+      max-width:1240px;
+      margin:0 auto;
+      padding:12px;
+      display:grid;
+      grid-template-columns:1fr 350px;
+      gap:12px;
+    }
+    .card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:14px;
+      box-shadow:0 8px 20px rgba(15,23,42,.05);
+    }
+    .main{padding:14px}
+    .side{padding:14px;height:fit-content;position:sticky;top:10px}
+    h1{font-size:1.2rem;margin:0 0 8px}
+    h2{font-size:1rem;margin:0 0 8px}
+    h3{font-size:.95rem;margin:0 0 8px;color:#1e293b}
+    p{margin:6px 0;color:var(--muted);line-height:1.5}
+    .chip{
+      display:inline-block;
+      padding:4px 10px;
+      border-radius:999px;
+      background:#eff6ff;
+      color:#1d4ed8;
+      border:1px solid #bfdbfe;
+      font-size:.8rem;
+      font-weight:700;
+      margin-right:6px;
+      margin-bottom:6px;
+    }
+
+    .schema-wrap{
+      margin-top:10px;
+      border:1px solid #dbe5f1;
+      border-radius:12px;
+      background:#f8fafc;
+      padding:10px;
+    }
+    .schema-grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+    }
+    .schema-table{
+      border:1px solid #cfd9e7;
+      border-radius:10px;
+      background:#ffffff;
+      overflow:hidden;
+    }
+    .schema-head{
+      background:#eaf2ff;
+      color:#1e3a8a;
+      font-weight:800;
+      padding:8px 10px;
+      border-bottom:1px solid #dbe5f1;
+      letter-spacing:.2px;
+    }
+    .schema-body{
+      padding:8px 10px;
+      font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size:.88rem;
+      line-height:1.5;
+      color:#0f172a;
+      white-space:pre;
+      overflow:auto;
+    }
+
+    .desc-table{
+      width:100%;
+      border-collapse:collapse;
+      margin-top:10px;
+      font-size:.9rem;
+      background:#fff;
+      border:1px solid #e2e8f0;
+      border-radius:10px;
+      overflow:hidden;
+      display:block;
+    }
+    .desc-head, .desc-row{
+      display:grid;
+      grid-template-columns:120px 160px 1fr;
+      align-items:start;
+    }
+    .desc-head{
+      background:#f1f5f9;
+      color:#334155;
+      font-weight:700;
+      border-bottom:1px solid #e2e8f0;
+    }
+    .desc-row{
+      border-bottom:1px dashed #e2e8f0;
+    }
+    .desc-row:last-child{border-bottom:none}
+    .desc-cell{
+      padding:8px 10px;
+      word-break:break-word;
+    }
+
+    .legend{
+      margin-top:10px;
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+    }
+    .tag{
+      display:inline-block;
+      border-radius:999px;
+      padding:3px 8px;
+      font-size:.75rem;
+      font-weight:700;
+      border:1px solid;
+    }
+    .pk{color:#14532d;background:#dcfce7;border-color:#86efac}
+    .fk{color:#7c2d12;background:#ffedd5;border-color:#fdba74}
+    .note{color:#334155;background:#eff6ff;border-color:#bfdbfe}
+
+    .box{
+      margin-top:10px;
+      border:1px solid #e2e8f0;
+      border-radius:10px;
+      background:#f8fafc;
+      padding:10px;
+    }
+    .row{
+      display:grid;
+      grid-template-columns:1fr 1fr 1fr;
+      gap:8px;
+      margin-top:10px;
+    }
+    select, textarea, button{
+      width:100%;
+      border-radius:10px;
+      border:1px solid #cbd5e1;
+      padding:10px;
+      font-size:1rem;
+      background:#fff;
+      color:var(--text);
+    }
+    textarea{
+      min-height:130px;
+      font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      resize:vertical;
+    }
+    button{
+      border:none;
+      color:#fff;
+      font-weight:700;
+      cursor:pointer;
+      min-height:44px;
+      background:var(--primary);
+    }
+    .btn-ok{background:#16a34a}
+    .btn-secondary{background:#334155}
+    .btn-warn{background:#b45309}
+    .btn-danger{background:#dc2626}
+    .status{
+      margin-top:10px;
+      border-radius:10px;
+      padding:10px;
+      font-weight:700;
+      white-space:pre-line;
+      display:none;
+    }
+    .status.show{display:block}
+    .status.ok{background:#dcfce7;color:#14532d;border-left:4px solid var(--ok)}
+    .status.bad{background:#fee2e2;color:#7f1d1d;border-left:4px solid var(--bad)}
+    .status.warn{background:#fef3c7;color:#78350f;border-left:4px solid var(--warn)}
+    .small{font-size:.9rem;color:var(--muted)}
+    .progress{
+      margin-top:8px;
+      height:12px;
+      border-radius:999px;
+      background:#e2e8f0;
+      overflow:hidden;
+    }
+    .bar{
+      height:100%;
+      width:0%;
+      background:linear-gradient(90deg,#2563eb,#16a34a);
+      transition:width .25s ease;
+    }
+    .divider{
+      height:1px;
+      background:#e2e8f0;
+      margin:10px 0;
+    }
+
+    @media (max-width:1040px){
+      .app{grid-template-columns:1fr}
+      .side{position:static}
+      .row{grid-template-columns:1fr}
+      .schema-grid{grid-template-columns:1fr}
+      .desc-head, .desc-row{grid-template-columns:100px 130px 1fr}
+    }
+
+    /* ===== iPad / Tablet Optimization Patch ===== */
+
+/* Better touch behavior + safe areas */
+html, body {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+body {
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Make touch targets easier */
+select, textarea, button {
+  min-height: 50px;
+  font-size: 16px; /* prevents iOS zoom on focus */
+}
+textarea {
+  min-height: 180px;
+  line-height: 1.45;
+}
+
+/* Slightly bigger readable schema text */
+.schema-body {
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+
+/* iPad portrait / split-view / narrow laptop */
+@media (max-width: 1180px) {
+  .app {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  /* disable sticky on tablet for smoother flow */
+  .side {
+    position: static;
+    top: auto;
+  }
+
+  .main, .side {
+    padding: 12px;
+  }
+
+  .row {
+    grid-template-columns: 1fr;
+  }
+
+  .schema-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .desc-head,
+  .desc-row {
+    grid-template-columns: 92px 120px 1fr;
+  }
+}
+
+/* iPad landscape split / small width comfort */
+@media (max-width: 900px) {
+  h1 { font-size: 1.1rem; }
+  h2 { font-size: 1rem; }
+  p, .small { font-size: 0.95rem; }
+
+  .chip {
+    font-size: 0.78rem;
+    padding: 4px 8px;
+  }
+
+  .schema-wrap,
+  .box {
+    padding: 9px;
+  }
+}
+
+/* Very small phones fallback */
+@media (max-width: 560px) {
+  .desc-head, .desc-row {
+    grid-template-columns: 1fr;
+  }
+  .desc-head .desc-cell {
+    font-weight: 700;
+  }
+}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <section class="card main">
+      <h1>DSE ICT SQL 自學練習（Interactive）</h1>
+      <p>
+        <span class="chip">SELECT / WHERE</span>
+        <span class="chip">GROUP BY / HAVING</span>
+        <span class="chip">JOIN（內連接用 WHERE）</span>
+        <span class="chip">INSERT / UPDATE / DELETE</span>
+      </p>
+
+      <div class="schema-wrap">
+        <h3>資料表結構（Schema）</h3>
+        <div class="schema-grid">
+          <div class="schema-table">
+            <div class="schema-head">STUDENT</div>
+            <div class="schema-body">StudentID     CHAR(4)      主鍵
+StudentName   VARCHAR(50)
+Form          INT
+ClassNo       INT</div>
+          </div>
+          <div class="schema-table">
+            <div class="schema-head">TEACHER</div>
+            <div class="schema-body">TeacherID     CHAR(4)      主鍵
+TeacherName   VARCHAR(50)
+Dept          VARCHAR(30)</div>
+          </div>
+          <div class="schema-table">
+            <div class="schema-head">COURSE</div>
+            <div class="schema-body">CourseID      CHAR(4)      主鍵
+CourseName    VARCHAR(50)
+TeacherID     CHAR(4)      外鍵 -> TEACHER.TeacherID</div>
+          </div>
+          <div class="schema-table">
+            <div class="schema-head">ENROLLMENT</div>
+            <div class="schema-body">StudentID     CHAR(4)      主鍵, 外鍵 -> STUDENT.StudentID
+CourseID      CHAR(4)      主鍵, 外鍵 -> COURSE.CourseID
+Score         INT</div>
+          </div>
+        </div>
+
+        <div class="legend">
+          <span class="tag pk">主鍵（Primary Key）</span>
+          <span class="tag fk">外鍵（Foreign Key）</span>
+          <span class="tag note">ENROLLMENT 的複合主鍵：\(StudentID, CourseID\)</span>
+        </div>
+
+        <h3 style="margin-top:12px;">欄位說明（給學生）</h3>
+        <div class="desc-table">
+          <div class="desc-head">
+            <div class="desc-cell">資料表</div>
+            <div class="desc-cell">欄位</div>
+            <div class="desc-cell">意思</div>
+          </div>
+
+          <div class="desc-row"><div class="desc-cell">STUDENT</div><div class="desc-cell">StudentID</div><div class="desc-cell">學生編號（唯一識別每位學生）</div></div>
+          <div class="desc-row"><div class="desc-cell">STUDENT</div><div class="desc-cell">StudentName</div><div class="desc-cell">學生姓名</div></div>
+          <div class="desc-row"><div class="desc-cell">STUDENT</div><div class="desc-cell">Form</div><div class="desc-cell">年級（例如 4, 5, 6）</div></div>
+          <div class="desc-row"><div class="desc-cell">STUDENT</div><div class="desc-cell">ClassNo</div><div class="desc-cell">班別編號（例如 1, 2, 3）</div></div>
+
+          <div class="desc-row"><div class="desc-cell">TEACHER</div><div class="desc-cell">TeacherID</div><div class="desc-cell">教師編號（唯一）</div></div>
+          <div class="desc-row"><div class="desc-cell">TEACHER</div><div class="desc-cell">TeacherName</div><div class="desc-cell">教師姓名</div></div>
+          <div class="desc-row"><div class="desc-cell">TEACHER</div><div class="desc-cell">Dept</div><div class="desc-cell">教師所屬科組（如 ICT、Math）</div></div>
+
+          <div class="desc-row"><div class="desc-cell">COURSE</div><div class="desc-cell">CourseID</div><div class="desc-cell">課程編號（唯一）</div></div>
+          <div class="desc-row"><div class="desc-cell">COURSE</div><div class="desc-cell">CourseName</div><div class="desc-cell">課程名稱</div></div>
+          <div class="desc-row"><div class="desc-cell">COURSE</div><div class="desc-cell">TeacherID</div><div class="desc-cell">任教教師編號（連到 TEACHER）</div></div>
+
+          <div class="desc-row"><div class="desc-cell">ENROLLMENT</div><div class="desc-cell">StudentID</div><div class="desc-cell">報讀學生編號（連到 STUDENT）</div></div>
+          <div class="desc-row"><div class="desc-cell">ENROLLMENT</div><div class="desc-cell">CourseID</div><div class="desc-cell">報讀課程編號（連到 COURSE）</div></div>
+          <div class="desc-row"><div class="desc-cell">ENROLLMENT</div><div class="desc-cell">Score</div><div class="desc-cell">該學生在該課程的分數</div></div>
+        </div>
+      </div>
+
+      <div class="box">
+        <label for="categoryFilter"><strong>題型篩選</strong></label>
+        <select id="categoryFilter">
+          <option value="ALL">全部題型</option>
+          <option value="SELECT">SELECT / WHERE / ORDER BY</option>
+          <option value="AGG">Aggregate / GROUP BY / HAVING</option>
+          <option value="JOIN">JOIN（含 LEFT / RIGHT 指定題）</option>
+          <option value="ACTION">INSERT / UPDATE / DELETE</option>
+        </select>
+      </div>
+
+      <div id="questionBox" class="box"></div>
+
+      <div class="box">
+        <label for="sqlInput"><strong>輸入 SQL：</strong></label>
+        <textarea id="sqlInput" placeholder="例如：SELECT a.StudentName, b.CourseID FROM STUDENT a, ENROLLMENT b WHERE a.StudentID = b.StudentID;"></textarea>
+        <div class="row">
+          <button id="checkBtn" class="btn-ok">檢查答案</button>
+          <button id="hintBtn" class="btn-warn">提示</button>
+          <button id="answerBtn" class="btn-secondary">顯示參考答案</button>
+        </div>
+        <div class="row">
+          <button id="prevBtn" class="btn-secondary">上一題</button>
+          <button id="nextBtn" class="btn-secondary">下一題</button>
+          <button id="clearBtn" class="btn-danger">清空輸入</button>
+        </div>
+        <div id="status" class="status"></div>
+      </div>
+    </section>
+
+    <aside class="card side">
+      <h2>學習進度</h2>
+      <div class="small" id="progressText">0 / 0 題完成</div>
+      <div class="progress"><div id="bar" class="bar"></div></div>
+      <div class="divider"></div>
+      <div class="small" id="metaText">Category: ALL</div>
+      <div class="divider"></div>
+      <p class="small"><strong>Join 作答規則：</strong></p>
+      <p class="small">1) 內連接（一般題）：用 <code>FROM a,b WHERE a.x=b.x</code>。</p>
+      <p class="small">2) 指定 LEFT/RIGHT 的題目：必須用 <code>LEFT/RIGHT JOIN ... ON</code>。</p>
+      <button id="resetBtn" class="btn-secondary">重置作答記錄</button>
+    </aside>
+  </div>
+
+  <script>
+    const allQuestions = [
+      // SELECT
+      {
+        id:"s1", cat:"SELECT",
+        prompt:"列出所有學生姓名（StudentName），按姓名 A→Z 排序。",
+        hint:"使用 ORDER BY StudentName ASC。",
+        accepted:[
+          "SELECT StudentName FROM STUDENT ORDER BY StudentName;",
+          "SELECT StudentName FROM STUDENT ORDER BY StudentName ASC;"
+        ]
+      },
+      {
+        id:"s2", cat:"SELECT",
+        prompt:"列出 Form = 4 的學生（顯示 StudentID, StudentName）。",
+        hint:"使用 WHERE Form = 4。",
+        accepted:[
+          "SELECT StudentID, StudentName FROM STUDENT WHERE Form = 4;",
+          "SELECT StudentName, StudentID FROM STUDENT WHERE Form = 4;"
+        ]
+      },
+      {
+        id:"s3", cat:"SELECT",
+        prompt:"列出 ClassNo 不等於 1 的學生姓名。",
+        hint:"可用 <> 或 !=。",
+        accepted:[
+          "SELECT StudentName FROM STUDENT WHERE ClassNo <> 1;",
+          "SELECT StudentName FROM STUDENT WHERE ClassNo != 1;"
+        ]
+      },
+
+      // AGG
+      {
+        id:"a1", cat:"AGG",
+        prompt:"計算 STUDENT 表中的學生總人數。",
+        hint:"使用 COUNT(*)。",
+        accepted:[
+          "SELECT COUNT(*) FROM STUDENT;"
+        ]
+      },
+      {
+        id:"a2", cat:"AGG",
+        prompt:"計算每個 Form 有多少學生（顯示 Form, Total）。",
+        hint:"使用 GROUP BY Form。",
+        accepted:[
+          "SELECT Form, COUNT(*) AS Total FROM STUDENT GROUP BY Form;",
+          "SELECT Form, COUNT(*) FROM STUDENT GROUP BY Form;"
+        ]
+      },
+      {
+        id:"a3", cat:"AGG",
+        prompt:"找出平均分（AVG Score）大於等於 60 的課程（顯示 CourseID, AvgScore）。",
+        hint:"GROUP BY CourseID + HAVING AVG(Score) >= 60。",
+        accepted:[
+          "SELECT CourseID, AVG(Score) AS AvgScore FROM ENROLLMENT GROUP BY CourseID HAVING AVG(Score) >= 60;",
+          "SELECT CourseID, AVG(Score) FROM ENROLLMENT GROUP BY CourseID HAVING AVG(Score) >= 60;"
+        ]
+      },
+
+      // JOIN (inner join by WHERE style)
+      {
+        id:"j1", cat:"JOIN",
+        prompt:"【內連接】列出每個課程名稱及其教師名稱（CourseName, TeacherName）。請用 WHERE 連接寫法。",
+        hint:"FROM COURSE a, TEACHER b WHERE a.TeacherID = b.TeacherID",
+        accepted:[
+          "SELECT a.CourseName, b.TeacherName FROM COURSE a, TEACHER b WHERE a.TeacherID = b.TeacherID;"
+        ]
+      },
+      {
+        id:"j2", cat:"JOIN",
+        prompt:"【內連接】列出學生姓名與其報讀課程編號（StudentName, CourseID）。請用 WHERE 連接寫法。",
+        hint:"FROM STUDENT a, ENROLLMENT b WHERE a.StudentID = b.StudentID",
+        accepted:[
+          "SELECT a.StudentName, b.CourseID FROM STUDENT a, ENROLLMENT b WHERE a.StudentID = b.StudentID;"
+        ]
+      },
+      {
+        id:"j3", cat:"JOIN",
+        prompt:"【內連接】列出學生姓名、課程名稱與分數（StudentName, CourseName, Score）。請用 3 表 WHERE 連接。",
+        hint:"FROM STUDENT a, ENROLLMENT b, COURSE c WHERE a.StudentID=b.StudentID AND b.CourseID=c.CourseID",
+        accepted:[
+          "SELECT a.StudentName, c.CourseName, b.Score FROM STUDENT a, ENROLLMENT b, COURSE c WHERE a.StudentID = b.StudentID AND b.CourseID = c.CourseID;"
+        ]
+      },
+      {
+        id:"j4", cat:"JOIN",
+        prompt:"【指定 LEFT JOIN】列出所有課程及其教師姓名（即使未分配教師也要列出）。欄位：CourseName, TeacherName。",
+        hint:"這題必須用 LEFT JOIN ... ON。",
+        accepted:[
+          "SELECT a.CourseName, b.TeacherName FROM COURSE a LEFT JOIN TEACHER b ON a.TeacherID = b.TeacherID;"
+        ]
+      },
+      {
+        id:"j5", cat:"JOIN",
+        prompt:"【指定 RIGHT JOIN】列出所有教師及其課程名稱（即使沒有課程的教師也要列出）。欄位：TeacherName, CourseName。",
+        hint:"這題必須用 RIGHT JOIN ... ON。",
+        accepted:[
+          "SELECT b.TeacherName, a.CourseName FROM COURSE a RIGHT JOIN TEACHER b ON a.TeacherID = b.TeacherID;"
+        ]
+      },
+
+      // ACTION
+      {
+        id:"ac1", cat:"ACTION",
+        prompt:"新增一位學生：('S099','Chan Tai Man',4,2)。",
+        hint:"INSERT INTO STUDENT (...) VALUES (...);",
+        accepted:[
+          "INSERT INTO STUDENT (StudentID, StudentName, Form, ClassNo) VALUES ('S099', 'Chan Tai Man', 4, 2);"
+        ]
+      },
+      {
+        id:"ac2", cat:"ACTION",
+        prompt:"把 StudentID='S015' 的 ClassNo 改為 3。",
+        hint:"UPDATE + WHERE。",
+        accepted:[
+          "UPDATE STUDENT SET ClassNo = 3 WHERE StudentID = 'S015';"
+        ]
+      },
+      {
+        id:"ac3", cat:"ACTION",
+        prompt:"刪除 CourseID='C999' 的報讀紀錄（ENROLLMENT）。",
+        hint:"DELETE FROM ENROLLMENT WHERE CourseID='C999';",
+        accepted:[
+          "DELETE FROM ENROLLMENT WHERE CourseID = 'C999';"
+        ]
+      }
+    ];
+
+    const state = {
+      cat: "ALL",
+      index: 0,
+      solved: {},
+      pool: []
+    };
+
+    const questionBox = document.getElementById("questionBox");
+    const sqlInput = document.getElementById("sqlInput");
+    const statusEl = document.getElementById("status");
+    const progressText = document.getElementById("progressText");
+    const bar = document.getElementById("bar");
+    const metaText = document.getElementById("metaText");
+    const categoryFilter = document.getElementById("categoryFilter");
+
+    function normalizeSql(s){
+      return s
+        .toLowerCase()
+        .replace(/--.*$/gm, "")
+        .replace(/\s+/g, " ")
+        .replace(/\s*,\s*/g, ",")
+        .replace(/\s*=\s*/g, "=")
+        .replace(/\s*\(\s*/g, "(")
+        .replace(/\s*\)\s*/g, ")")
+        .replace(/\s*;\s*/g, ";")
+        .trim()
+        .replace(/;$/, "");
+    }
+
+    function setStatus(type, msg){
+      statusEl.className = "status show " + type;
+      statusEl.textContent = msg;
+    }
+
+    function clearStatus(){
+      statusEl.className = "status";
+      statusEl.textContent = "";
+    }
+
+    function rebuildPool(){
+      state.pool = state.cat === "ALL"
+        ? allQuestions
+        : allQuestions.filter(q => q.cat === state.cat);
+      if(state.index >= state.pool.length) state.index = 0;
+    }
+
+    function currentQ(){
+      if(state.pool.length === 0) return null;
+      return state.pool[state.index];
+    }
+
+    function renderQuestion(){
+      clearStatus();
+      const q = currentQ();
+      if(!q){
+        questionBox.innerHTML = "<strong>此題型暫無題目。</strong>";
+        updateProgress();
+        return;
+      }
+      questionBox.innerHTML = `
+        <div><strong>題目 ${state.index + 1} / ${state.pool.length}</strong> ・ <span class="chip">${q.cat}</span></div>
+        <p style="margin-top:8px;color:#0f172a;font-weight:700">${q.prompt}</p>
+      `;
+      sqlInput.value = "";
+      updateProgress();
+    }
+
+    function checkAnswer(){
+      const q = currentQ();
+      if(!q) return;
+
+      const userRaw = sqlInput.value.trim();
+      if(!userRaw){
+        setStatus("warn", "請先輸入 SQL。");
+        return;
+      }
+
+      const user = normalizeSql(userRaw);
+      const accepted = q.accepted.map(normalizeSql);
+
+      if(accepted.includes(user)){
+        setStatus("ok", "✅ 正確！");
+        state.solved[q.id] = true;
+      }else{
+        let extra = "";
+        if(q.cat === "JOIN"){
+          extra = "\n（Join 題提醒：內連接用 FROM ... WHERE a.x=b.x；若題目指定 LEFT/RIGHT，必須用 LEFT/RIGHT JOIN ... ON。）";
+        }
+        setStatus("bad", "未完全符合參考答案。\n請再檢查：欄位、條件、JOIN 類型與連接條件。" + extra);
+      }
+      updateProgress();
+    }
+
+    function showHint(){
+      const q = currentQ();
+      if(!q) return;
+      setStatus("warn", "提示：" + q.hint);
+    }
+
+    function showAnswer(){
+      const q = currentQ();
+      if(!q) return;
+      setStatus("ok", "參考答案：\n" + q.accepted[0]);
+    }
+
+    function nextQ(){
+      if(state.pool.length === 0) return;
+      state.index = (state.index + 1) % state.pool.length;
+      renderQuestion();
+    }
+
+    function prevQ(){
+      if(state.pool.length === 0) return;
+      state.index = (state.index - 1 + state.pool.length) % state.pool.length;
+      renderQuestion();
+    }
+
+    function updateProgress(){
+      const ids = state.pool.map(q => q.id);
+      const done = ids.filter(id => state.solved[id]).length;
+      progressText.textContent = `${done} / ${ids.length} 題完成`;
+      bar.style.width = ids.length ? `${(done / ids.length) * 100}%` : "0%";
+      metaText.textContent = `Category: ${state.cat}`;
+    }
+
+    categoryFilter.addEventListener("change", () => {
+      state.cat = categoryFilter.value;
+      state.index = 0;
+      rebuildPool();
+      renderQuestion();
+    });
+
+    document.getElementById("checkBtn").addEventListener("click", checkAnswer);
+    document.getElementById("hintBtn").addEventListener("click", showHint);
+    document.getElementById("answerBtn").addEventListener("click", showAnswer);
+    document.getElementById("nextBtn").addEventListener("click", nextQ);
+    document.getElementById("prevBtn").addEventListener("click", prevQ);
+    document.getElementById("clearBtn").addEventListener("click", () => {
+      sqlInput.value = "";
+      clearStatus();
+    });
+    document.getElementById("resetBtn").addEventListener("click", () => {
+      state.solved = {};
+      updateProgress();
+      setStatus("warn", "作答記錄已重置。");
+    });
+
+    rebuildPool();
+    renderQuestion();
+  </script>
+</body>
+</html>
