@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DSE ICT 試算表進階 Drill（XLOOKUP / SUMIFS / COUNTIFS）</title>
+  <style>
+    :root{
+      --bg:#f3f6fb;
+      --card:#ffffff;
+      --text:#0f172a;
+      --muted:#64748b;
+      --line:#dbe5f1;
+      --primary:#2563eb;
+      --ok:#15803d;
+      --bad:#b91c1c;
+      --warn:#b45309;
+    }
+    *{box-sizing:border-box}
+    html, body {
+      -webkit-text-size-adjust: 100%;
+      text-size-adjust: 100%;
+    }
+    body{
+      margin:0;
+      font-family:"PingFang TC","Microsoft JhengHei","Noto Sans TC",Arial,sans-serif;
+      color:var(--text);
+      background:linear-gradient(180deg,#edf2fb,#f8fbff);
+      padding-left: env(safe-area-inset-left);
+      padding-right: env(safe-area-inset-right);
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    .app{
+      max-width:1280px;
+      margin:0 auto;
+      padding:12px;
+      display:grid;
+      grid-template-columns:1fr 330px;
+      gap:12px;
+    }
+    .card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:14px;
+      box-shadow:0 8px 20px rgba(15,23,42,.05);
+    }
+    .main,.side{padding:12px}
+    .side{position:sticky;top:10px;height:fit-content}
+    h1{font-size:1.2rem;margin:0 0 8px}
+    h2{font-size:1rem;margin:0 0 8px}
+    p{margin:6px 0;color:var(--muted)}
+    .chip{
+      display:inline-block;padding:4px 10px;border-radius:999px;
+      background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8;
+      font-size:.8rem;font-weight:700;margin-right:6px;margin-bottom:6px;
+    }
+    .sheet-wrap{
+      margin-top:8px;
+      border:1px solid #dbe5f1;border-radius:10px;overflow:auto;background:#fff;
+    }
+    table{
+      width:100%;
+      border-collapse:collapse;
+      min-width:980px;
+      font-size:.92rem;
+    }
+    th,td{
+      border:1px solid #e2e8f0;
+      padding:8px 10px;
+      text-align:left;
+      white-space:nowrap;
+    }
+    th{background:#f1f5f9;color:#334155}
+    .box{
+      margin-top:10px;
+      border:1px solid #e2e8f0;
+      border-radius:10px;
+      background:#f8fafc;
+      padding:10px;
+    }
+    textarea,select,button{
+      width:100%;
+      min-height:50px;
+      border-radius:10px;
+      border:1px solid #cbd5e1;
+      padding:10px;
+      font-size:16px;
+      background:#fff;
+    }
+    textarea{
+      min-height:180px;
+      resize:vertical;
+      font-family:ui-monospace,Menlo,Consolas,monospace;
+      line-height:1.45;
+    }
+    button{
+      border:none;color:#fff;font-weight:700;cursor:pointer;background:var(--primary);
+    }
+    .row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px}
+    .btn-ok{background:#16a34a}
+    .btn-warn{background:#b45309}
+    .btn-secondary{background:#334155}
+    .btn-danger{background:#dc2626}
+    .status{
+      margin-top:8px;padding:10px;border-radius:10px;font-weight:700;white-space:pre-line;display:none;
+    }
+    .status.show{display:block}
+    .status.ok{background:#dcfce7;color:#14532d;border-left:4px solid var(--ok)}
+    .status.bad{background:#fee2e2;color:#7f1d1d;border-left:4px solid var(--bad)}
+    .status.warn{background:#fef3c7;color:#78350f;border-left:4px solid var(--warn)}
+    .small{font-size:.92rem;color:var(--muted);line-height:1.5}
+    .progress{height:12px;border-radius:999px;background:#e2e8f0;overflow:hidden;margin-top:6px}
+    .bar{height:100%;width:0;background:linear-gradient(90deg,#2563eb,#16a34a);transition:width .2s}
+    .qline{font-weight:700;color:#0f172a}
+    code{background:#eef2ff;padding:1px 5px;border-radius:6px}
+
+    @media (max-width:1180px){
+      .app{grid-template-columns:1fr;gap:10px}
+      .side{position:static;top:auto}
+      .main,.side{padding:12px}
+      .row{grid-template-columns:1fr}
+    }
+    @media (max-width:900px){
+      h1{font-size:1.1rem}
+      h2{font-size:1rem}
+      p,.small{font-size:.95rem}
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <section class="card main">
+      <h1>DSE ICT 試算表進階 Drill</h1>
+      <p>
+        <span class="chip">XLOOKUP / VLOOKUP</span>
+        <span class="chip">SUMIF / SUMIFS / COUNTIFS</span>
+        <span class="chip">IF / IFERROR</span>
+        <span class="chip">ROUND / RANK.EQ</span>
+      </p>
+
+      <div class="sheet-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Row</th><th>A StudentID</th><th>B Name</th><th>C Class</th><th>D Test1</th><th>E Test2</th><th>F Attendance</th><th>G FeePaid</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>2</td><td>S001</td><td>Alex</td><td>4A</td><td>68</td><td>72</td><td>95</td><td>Y</td></tr>
+            <tr><td>3</td><td>S002</td><td>Bella</td><td>4A</td><td>49</td><td>58</td><td>88</td><td>N</td></tr>
+            <tr><td>4</td><td>S003</td><td>Chris</td><td>4B</td><td>85</td><td>80</td><td>97</td><td>Y</td></tr>
+            <tr><td>5</td><td>S004</td><td>Dora</td><td>4B</td><td>39</td><td>44</td><td>76</td><td>N</td></tr>
+            <tr><td>6</td><td>S005</td><td>Ethan</td><td>5A</td><td>77</td><td>73</td><td>91</td><td>Y</td></tr>
+            <tr><td>7</td><td>S006</td><td>Fiona</td><td>5A</td><td>61</td><td>66</td><td>89</td><td>Y</td></tr>
+            <tr><td>8</td><td>S007</td><td>Gavin</td><td>5B</td><td>52</td><td>48</td><td>82</td><td>N</td></tr>
+            <tr><td>9</td><td>S008</td><td>Hana</td><td>5B</td><td>90</td><td>94</td><td>99</td><td>Y</td></tr>
+            <tr><td>10</td><td>S009</td><td>Ivan</td><td>6A</td><td>56</td><td>60</td><td>86</td><td>Y</td></tr>
+            <tr><td>11</td><td>S010</td><td>Judy</td><td>6A</td><td>47</td><td>51</td><td>83</td><td>N</td></tr>
+            <tr><td>12</td><td>S011</td><td>Ken</td><td>6A</td><td>72</td><td>70</td><td>90</td><td>Y</td></tr>
+            <tr><td>13</td><td>S012</td><td>Lily</td><td>5A</td><td>64</td><td>62</td><td>92</td><td>Y</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="sheet-wrap">
+        <table>
+          <thead>
+            <tr><th>Cell</th><th>Value</th><th>Cell</th><th>Value</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>K1</td><td>5 (Bonus)</td><td>I1</td><td>輸入待查 StudentID（供查找題使用）</td></tr>
+            <tr><td>N1</td><td>Class</td><td>O1</td><td>ClassBonus</td></tr>
+            <tr><td>N2</td><td>4A</td><td>O2</td><td>2</td></tr>
+            <tr><td>N3</td><td>4B</td><td>O3</td><td>2</td></tr>
+            <tr><td>N4</td><td>5A</td><td>O4</td><td>3</td></tr>
+            <tr><td>N5</td><td>5B</td><td>O5</td><td>3</td></tr>
+            <tr><td>N6</td><td>6A</td><td>O6</td><td>4</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div id="questionBox" class="box"></div>
+
+      <div class="box">
+        <div id="inputArea"></div>
+        <div class="row">
+          <button id="checkBtn" class="btn-ok">檢查答案</button>
+          <button id="hintBtn" class="btn-warn">提示</button>
+          <button id="answerBtn" class="btn-secondary">顯示參考答案</button>
+        </div>
+        <div class="row">
+          <button id="prevBtn" class="btn-secondary">上一題</button>
+          <button id="nextBtn" class="btn-secondary">下一題</button>
+          <button id="clearBtn" class="btn-danger">清空輸入</button>
+        </div>
+        <div id="status" class="status"></div>
+      </div>
+    </section>
+
+    <aside class="card side">
+      <h2>進度</h2>
+      <div class="small" id="progressText">0 / 24 題完成</div>
+      <div class="progress"><div id="bar" class="bar"></div></div>
+
+      <div class="small" style="margin-top:10px;">
+        規則：
+        <ul>
+          <li>公式可輸入有/無 <code>=</code></li>
+          <li>忽略大小寫與多餘空白</li>
+          <li><code>,</code> 與 <code>;</code> 都接受</li>
+          <li>XLOOKUP 題可用 VLOOKUP 作替代</li>
+        </ul>
+      </div>
+      <button id="resetBtn" class="btn-secondary" style="margin-top:10px;">重置作答</button>
+    </aside>
+  </div>
+
+  <script>
+    const questions = [
+      {id:"q1", type:"formula", q:"在 H1 顯示學生總人數（A2:A13）。", hint:"用 COUNTA。", answers:["=COUNTA(A2:A13)"]},
+      {id:"q2", type:"formula", q:"在 H2 計算 Test1 平均分（D2:D13）。", hint:"用 AVERAGE。", answers:["=AVERAGE(D2:D13)"]},
+      {id:"q3", type:"formula", q:"在 H3 取 Test2 最高分（E2:E13）。", hint:"用 MAX。", answers:["=MAX(E2:E13)"]},
+      {id:"q4", type:"formula", q:"在 H4 取 Attendance 最低值（F2:F13）。", hint:"用 MIN。", answers:["=MIN(F2:F13)"]},
+      {id:"q5", type:"formula", q:"在 H5 計算已交費人數（G 欄為 Y）。", hint:"COUNTIF。", answers:['=COUNTIF(G2:G13,"Y")']},
+      {id:"q6", type:"formula", q:"在 H6 計算 5A 且已交費（Y）的人數。", hint:"COUNTIFS。", answers:['=COUNTIFS(C2:C13,"5A",G2:G13,"Y")', '=COUNTIFS(G2:G13,"Y",C2:C13,"5A")']},
+      {id:"q7", type:"formula", q:"在 H7 計算 4B 班 Test1 總分。", hint:"SUMIF。", answers:['=SUMIF(C2:C13,"4B",D2:D13)']},
+      {id:"q8", type:"formula", q:"在 H8 計算 5A 且 FeePaid=Y 的 Attendance 總和。", hint:"SUMIFS。", answers:['=SUMIFS(F2:F13,C2:C13,"5A",G2:G13,"Y")', '=SUMIFS(F2:F13,G2:G13,"Y",C2:C13,"5A")']},
+      {id:"q9", type:"formula", q:"在 H9 計算 6A 班 Test2 平均分。", hint:"AVERAGEIF。", answers:['=AVERAGEIF(C2:C13,"6A",E2:E13)']},
+      {id:"q10", type:"formula", q:"在 H2（假設 H 欄是平均分）計算該生兩次測驗平均。", hint:"可用 AVERAGE 或自行相加除2。", answers:["=AVERAGE(D2:E2)","=(D2+E2)/2"]},
+      {id:"q11", type:"formula", q:'在 I2 顯示 Pass/Fail：若 H2 >= 50 顯示 "Pass"，否則 "Fail"。', hint:"IF。", answers:['=IF(H2>=50,"Pass","Fail")']},
+      {id:"q12", type:"formula", q:"在 J2 計算 FinalScore：H2 + K1，並可向下填滿。", hint:"K1 需絕對參照。", answers:["=H2+$K$1"]},
+      {id:"q13", type:"formula", q:"在 L2 依 C2 到 N2:O6 查 ClassBonus（用 XLOOKUP）。", hint:"找 Class -> Bonus。", answers:['=XLOOKUP(C2,N2:N6,O2:O6,"N/A")','=VLOOKUP(C2,N2:O6,2,FALSE)']},
+      {id:"q14", type:"formula", q:"在 M2 計算 TotalWithClassBonus：J2 + L2。", hint:"簡單相加。", answers:["=J2+L2"]},
+      {id:"q15", type:"formula", q:"在 H10 計算兩科都合格（>=50）的人數。", hint:"COUNTIFS 兩個條件。", answers:['=COUNTIFS(D2:D13,">=50",E2:E13,">=50")']},
+      {id:"q16", type:"formula", q:"在 J2 將 H2 四捨五入到整數。", hint:"ROUND(number,0)。", answers:["=ROUND(H2,0)"]},
+      {id:"q17", type:"formula", q:"在 K2 依 H2:H13 排名（最高分=1）。", hint:"RANK.EQ 第三參數 0。", answers:["=RANK.EQ(H2,$H$2:$H$13,0)","=RANK(H2,$H$2:$H$13,0)"]},
+      {id:"q18", type:"formula", q:'在 L2 以出席率分類：F2 >= 90 顯示 "Excellent"，否則 "Normal"。', hint:"IF。", answers:['=IF(F2>=90,"Excellent","Normal")']},
+      {id:"q19", type:"formula", q:'在 M2 合併姓名與班別成 "Alex (4A)" 格式。', hint:"可用 &。", answers:['=B2&" ("&C2&")"']},
+      {id:"q20", type:"formula", q:'在 N2 用 IFERROR 包住查找：查不存在班別 "7A"，找不到顯示 "No Class"。', hint:"IFERROR(XLOOKUP(...),\"No Class\")", answers:['=IFERROR(XLOOKUP("7A",N2:N6,O2:O6),"No Class")','=IFERROR(VLOOKUP("7A",N2:O6,2,FALSE),"No Class")']},
+      {id:"q21", type:"mcq", q:"要按『班別』比較平均分，最合適圖表是？", hint:"比較類別數值。", options:["圓餅圖","直條圖","散佈圖","雷達圖"], correct:1},
+      {id:"q22", type:"mcq", q:"下列哪個函數最適合『多條件加總』？", hint:"關鍵字：多條件。", options:["SUM","SUMIF","SUMIFS","SUBTOTAL"], correct:2},
+      {id:"q23", type:"mcq", q:"在公式 =H2+$K$1 中，$K$1 屬於哪種參照？", hint:"列欄都鎖定。", options:["相對參照","絕對參照","混合參照","3D 參照"], correct:1},
+      {id:"q24", type:"mcq", q:"XLOOKUP 找不到結果時，最常配合哪個函數避免錯誤顯示？", hint:"#N/A 錯誤處理。", options:["ROUND","IFERROR","COUNTA","LEFT"], correct:1}
+    ];
+
+    const state = { i:0, solved:{} };
+
+    const questionBox = document.getElementById("questionBox");
+    const inputArea = document.getElementById("inputArea");
+    const statusEl = document.getElementById("status");
+    const progressText = document.getElementById("progressText");
+    const bar = document.getElementById("bar");
+
+    function normalizeFormula(s){
+      let x = (s || "").trim().toLowerCase();
+      if(!x) return "";
+      x = x.replace(/;/g, ",");
+      x = x.replace(/\s+/g, "");
+      if(!x.startsWith("=")) x = "=" + x;
+      return x;
+    }
+
+    function setStatus(type,msg){
+      statusEl.className = "status show " + type;
+      statusEl.textContent = msg;
+    }
+
+    function clearStatus(){
+      statusEl.className = "status";
+      statusEl.textContent = "";
+    }
+
+    function renderQuestion(){
+      clearStatus();
+      const q = questions[state.i];
+      questionBox.innerHTML = `
+        <div class="qline">題目 ${state.i+1} / ${questions.length}</div>
+        <p class="qline">${q.q}</p>
+      `;
+      if(q.type === "formula"){
+        inputArea.innerHTML = `<textarea id="answerInput" placeholder="輸入公式，例如 =SUMIFS(F2:F13,C2:C13,&quot;5A&quot;,G2:G13,&quot;Y&quot;)"></textarea>`;
+      }else{
+        inputArea.innerHTML = `
+          <select id="answerSelect">
+            <option value="">請選擇...</option>
+            ${q.options.map((o,idx)=>`<option value="${idx}">${o}</option>`).join("")}
+          </select>
+        `;
+      }
+      updateProgress();
+    }
+
+    function updateProgress(){
+      const done = Object.keys(state.solved).length;
+      progressText.textContent = `${done} / ${questions.length} 題完成`;
+      bar.style.width = `${(done / questions.length) * 100}%`;
+    }
+
+    function checkAnswer(){
+      const q = questions[state.i];
+
+      if(q.type === "formula"){
+        const raw = document.getElementById("answerInput").value;
+        const got = normalizeFormula(raw);
+        if(!got){
+          setStatus("warn","請先輸入公式。");
+          return;
+        }
+
+        const accepted = q.answers.map(normalizeFormula);
+        const ok = accepted.includes(got);
+
+        if(ok){
+          state.solved[q.id] = true;
+          setStatus("ok","✅ 正確！");
+        }else{
+          setStatus("bad","未完全正確。\n請檢查：函數、範圍、條件字串、絕對參照。");
+        }
+      }else{
+        const v = document.getElementById("answerSelect").value;
+        if(v === ""){
+          setStatus("warn","請先選擇答案。");
+          return;
+        }
+        const ok = Number(v) === q.correct;
+        if(ok){
+          state.solved[q.id] = true;
+          setStatus("ok","✅ 正確！");
+        }else{
+          setStatus("bad","未正確，再想想函數用途或觀念。");
+        }
+      }
+
+      updateProgress();
+    }
+
+    function showHint(){
+      setStatus("warn","提示：" + questions[state.i].hint);
+    }
+
+    function showAnswer(){
+      const q = questions[state.i];
+      if(q.type === "formula"){
+        setStatus("ok","參考答案（其中一種）：\n" + q.answers[0]);
+      }else{
+        setStatus("ok","參考答案：\n" + q.options[q.correct]);
+      }
+    }
+
+    function clearInput(){
+      const t = document.getElementById("answerInput");
+      const s = document.getElementById("answerSelect");
+      if(t) t.value = "";
+      if(s) s.value = "";
+      clearStatus();
+    }
+
+    document.getElementById("checkBtn").addEventListener("click", checkAnswer);
+    document.getElementById("hintBtn").addEventListener("click", showHint);
+    document.getElementById("answerBtn").addEventListener("click", showAnswer);
+    document.getElementById("prevBtn").addEventListener("click", ()=>{
+      state.i = (state.i - 1 + questions.length) % questions.length;
+      renderQuestion();
+    });
+    document.getElementById("nextBtn").addEventListener("click", ()=>{
+      state.i = (state.i + 1) % questions.length;
+      renderQuestion();
+    });
+    document.getElementById("clearBtn").addEventListener("click", clearInput);
+    document.getElementById("resetBtn").addEventListener("click", ()=>{
+      state.solved = {};
+      updateProgress();
+      setStatus("warn","已重置作答記錄。");
+    });
+
+    renderQuestion();
+  </script>
+</body>
+</html>
