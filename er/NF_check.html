@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DSE ICT 正規化自學平台（NF Check）</title>
+  <style>
+    :root{
+      --bg:#f3f6fb;
+      --card:#ffffff;
+      --text:#0f172a;
+      --muted:#64748b;
+      --line:#dbe5f1;
+      --primary:#2563eb;
+      --ok:#15803d;
+      --bad:#b91c1c;
+      --warn:#b45309;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:"PingFang TC","Microsoft JhengHei","Noto Sans TC",Arial,sans-serif;
+      color:var(--text);
+      background:linear-gradient(180deg,#edf2fb,#f8fbff);
+    }
+    .app{
+      max-width:1100px;
+      margin:0 auto;
+      padding:14px;
+      display:grid;
+      grid-template-columns: 1fr 340px;
+      gap:12px;
+    }
+    .card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:14px;
+      box-shadow:0 8px 20px rgba(15,23,42,.05);
+    }
+    .main{padding:14px}
+    .side{padding:14px;height:fit-content;position:sticky;top:10px}
+    h1{margin:0 0 8px;font-size:1.2rem}
+    h2{margin:0 0 8px;font-size:1rem}
+    p{margin:6px 0;color:var(--muted);line-height:1.5}
+    .chip{
+      display:inline-block;
+      padding:4px 10px;
+      border-radius:999px;
+      background:#eff6ff;
+      color:#1d4ed8;
+      font-size:.8rem;
+      font-weight:700;
+      border:1px solid #bfdbfe;
+      margin-right:6px;
+      margin-bottom:6px;
+    }
+    .box{
+      border:1px solid #e2e8f0;
+      border-radius:10px;
+      padding:10px;
+      background:#f8fafc;
+      margin-top:10px;
+    }
+    .table-code{
+      margin-top:8px;
+      padding:10px;
+      border-radius:10px;
+      background:#0f172a;
+      color:#e2e8f0;
+      font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      overflow:auto;
+      font-size:.9rem;
+      line-height:1.4;
+    }
+    .options{margin-top:10px;display:grid;gap:10px}
+    .group{
+      border:1px solid #e2e8f0;
+      border-radius:10px;
+      padding:10px;
+      background:#fff;
+    }
+    .group-title{font-weight:700;margin-bottom:8px;color:#334155}
+    label{display:block;margin:6px 0;color:#1f2937}
+    select,button{
+      width:100%;
+      min-height:44px;
+      border-radius:10px;
+      border:1px solid #cbd5e1;
+      padding:8px 10px;
+      font-size:1rem;
+    }
+    button{
+      border:none;
+      color:white;
+      background:var(--primary);
+      font-weight:700;
+      cursor:pointer;
+    }
+    .btn-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:10px}
+    .btn-secondary{background:#334155}
+    .btn-ok{background:#16a34a}
+    .btn-warn{background:#b45309}
+    .status{
+      margin-top:10px;
+      border-radius:10px;
+      padding:10px;
+      font-weight:700;
+      display:none;
+      white-space:pre-line;
+    }
+    .status.show{display:block}
+    .status.ok{background:#dcfce7;color:#14532d;border-left:4px solid var(--ok)}
+    .status.bad{background:#fee2e2;color:#7f1d1d;border-left:4px solid var(--bad)}
+    .status.warn{background:#fef3c7;color:#78350f;border-left:4px solid var(--warn)}
+    .progress{
+      border:1px solid #e2e8f0;
+      border-radius:999px;
+      overflow:hidden;
+      height:12px;
+      background:#f1f5f9;
+      margin:8px 0;
+    }
+    .bar{
+      height:100%;
+      width:0%;
+      background:linear-gradient(90deg,#2563eb,#16a34a);
+      transition:width .25s ease;
+    }
+    .small{font-size:.9rem;color:var(--muted)}
+    .divider{height:1px;background:#e2e8f0;margin:10px 0}
+    @media (max-width:980px){
+      .app{grid-template-columns:1fr}
+      .side{position:static}
+      .btn-row{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <section class="card main">
+      <h1>DSE ICT：NF Check 自學練習（至 3NF）</h1>
+      <p>
+        <span class="chip">Step 1：判斷最高正規化程度</span>
+        <span class="chip">Step 2：指出違規類型</span>
+        <span class="chip">Step 3：選擇合理分解</span>
+      </p>
+
+      <div id="questionBox" class="box"></div>
+
+      <div class="options">
+        <div class="group">
+          <div class="group-title">1) 最高正規化程度（1NF / 2NF / 3NF）</div>
+          <select id="nfSelect">
+            <option value="">請選擇...</option>
+            <option value="NOT_1NF">未達 1NF</option>
+            <option value="1NF">1NF</option>
+            <option value="2NF">2NF</option>
+            <option value="3NF">3NF</option>
+          </select>
+        </div>
+
+        <div class="group">
+          <div class="group-title">2) 問題類型（可多選）</div>
+          <label><input type="checkbox" value="repeating" class="vcheck"> 重複群組 / 非原子欄位（違反 1NF）</label>
+          <label><input type="checkbox" value="partial" class="vcheck"> 部分相依（違反 2NF）</label>
+          <label><input type="checkbox" value="transitive" class="vcheck"> 傳遞相依（違反 3NF）</label>
+          <label><input type="checkbox" value="none" class="vcheck"> 無（已達 3NF）</label>
+        </div>
+
+        <div class="group">
+          <div class="group-title">3) 選擇最合理分解</div>
+          <div id="decomposeOptions"></div>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button id="checkBtn" class="btn-ok">檢查本題</button>
+        <button id="hintBtn" class="btn-warn">顯示提示</button>
+        <button id="nextBtn" class="btn-secondary">下一題</button>
+      </div>
+
+      <div id="status" class="status"></div>
+      <div id="explain" class="box" style="display:none;"></div>
+    </section>
+
+    <aside class="card side">
+      <h2>學習進度</h2>
+      <div class="small" id="progressText">0 / 8 題完成</div>
+      <div class="progress"><div class="bar" id="bar"></div></div>
+      <div class="divider"></div>
+      <p class="small">✅ 每題建議流程：</p>
+      <p class="small">先找主鍵 → 看有無重複群組 → 檢查部分相依 → 檢查傳遞相依。</p>
+      <div class="divider"></div>
+      <button id="resetAllBtn" class="btn-secondary">重置全部作答</button>
+    </aside>
+  </div>
+
+  <script>
+    const questions = [
+      {
+        id:"nf1",
+        title:"Q1 選課紀錄",
+        relation:"ENROLLMENT(StudentID, StudentName, ClassID, ClassName, TeacherName, Score)",
+        key:"(StudentID, ClassID)",
+        fds:[
+          "StudentID → StudentName",
+          "ClassID → ClassName, TeacherName",
+          "(StudentID, ClassID) → Score"
+        ],
+        highest:"1NF",
+        violations:["partial"],
+        decompose:[
+          "A. ENROLLMENT 原表不變",
+          "B. STUDENT(StudentID, StudentName), CLASS(ClassID, ClassName, TeacherName), ENROLLMENT(StudentID, ClassID, Score)",
+          "C. STUDENT(StudentID, StudentName, ClassID), CLASS(ClassID, ClassName), SCORE(StudentID, Score)"
+        ],
+        correctDec:1,
+        hint:"複合鍵最常出現部分相依。",
+        explanation:"StudentName 只依賴 StudentID；ClassName/TeacherName 只依賴 ClassID，屬部分相依，所以最高是 1NF。"
+      },
+      {
+        id:"nf2",
+        title:"Q2 訂單主檔",
+        relation:"ORDER_HDR(OrderID, CustomerID, CustomerName, CustomerPhone, OrderDate)",
+        key:"OrderID",
+        fds:[
+          "OrderID → CustomerID, OrderDate",
+          "CustomerID → CustomerName, CustomerPhone"
+        ],
+        highest:"2NF",
+        violations:["transitive"],
+        decompose:[
+          "A. CUSTOMER(CustomerID, CustomerName, CustomerPhone), ORDER_HDR(OrderID, CustomerID, OrderDate)",
+          "B. ORDER_HDR(OrderID, CustomerID, CustomerName, CustomerPhone, OrderDate)",
+          "C. ORDER_HDR(OrderID, CustomerName, CustomerPhone, OrderDate)"
+        ],
+        correctDec:0,
+        hint:"單一主鍵通常不會有部分相依，留意傳遞相依。",
+        explanation:"OrderID 決定 CustomerID，再由 CustomerID 決定客戶資料，屬傳遞相依；故最高 2NF。"
+      },
+      {
+        id:"nf3",
+        title:"Q3 成績表（壞設計）",
+        relation:"REPORT_CARD(StudentID, StudentName, Subject1, Score1, Subject2, Score2, Subject3, Score3)",
+        key:"StudentID（但欄位結構重複）",
+        fds:[
+          "StudentID → StudentName, Subject1, Score1, Subject2, Score2, Subject3, Score3"
+        ],
+        highest:"NOT_1NF",
+        violations:["repeating"],
+        decompose:[
+          "A. 保持原表",
+          "B. STUDENT(StudentID, StudentName), RESULT(StudentID, SubjectID, Score)",
+          "C. RESULT(StudentID, Subject1, Score1)"
+        ],
+        correctDec:1,
+        hint:"Subject1/2/3 是典型重複群組。",
+        explanation:"欄位不是可擴展的原子結構，未達 1NF。應改為每科一筆紀錄。"
+      },
+      {
+        id:"nf4",
+        title:"Q4 純粹修課分數",
+        relation:"ENROLL_SCORE(StudentID, CourseID, Score)",
+        key:"(StudentID, CourseID)",
+        fds:[
+          "(StudentID, CourseID) → Score"
+        ],
+        highest:"3NF",
+        violations:["none"],
+        decompose:[
+          "A. 不需分解（已足夠）",
+          "B. STUDENT(StudentID), COURSE(CourseID), SCORE(Score)",
+          "C. COURSE(CourseID, Score)"
+        ],
+        correctDec:0,
+        hint:"只有鍵決定非鍵，且無其他決定關係。",
+        explanation:"沒有部分相依或傳遞相依，已達 3NF。"
+      },
+      {
+        id:"nf5",
+        title:"Q5 測驗結果",
+        relation:"RESULT(StudentID, SubjectID, SubjectName, StudentName, Mark)",
+        key:"(StudentID, SubjectID)",
+        fds:[
+          "StudentID → StudentName",
+          "SubjectID → SubjectName",
+          "(StudentID, SubjectID) → Mark"
+        ],
+        highest:"1NF",
+        violations:["partial"],
+        decompose:[
+          "A. STUDENT(StudentID, StudentName), SUBJECT(SubjectID, SubjectName), RESULT(StudentID, SubjectID, Mark)",
+          "B. RESULT(StudentID, SubjectID, SubjectName, StudentName, Mark)",
+          "C. STUDENT(StudentID, SubjectID, StudentName), SUBJECT(SubjectID, SubjectName)"
+        ],
+        correctDec:0,
+        hint:"和 Q1 同型，換了故事背景。",
+        explanation:"StudentName 與 SubjectName 都只依賴複合鍵的一部分。"
+      },
+      {
+        id:"nf6",
+        title:"Q6 館藏複本",
+        relation:"BOOK_COPY(CopyID, ISBN, Title, Publisher, ShelfNo)",
+        key:"CopyID",
+        fds:[
+          "CopyID → ISBN, ShelfNo",
+          "ISBN → Title, Publisher"
+        ],
+        highest:"2NF",
+        violations:["transitive"],
+        decompose:[
+          "A. BOOK(ISBN, Title, Publisher), COPY(CopyID, ISBN, ShelfNo)",
+          "B. BOOK_COPY(CopyID, ISBN, Title, Publisher, ShelfNo)",
+          "C. COPY(CopyID, Title, ShelfNo)"
+        ],
+        correctDec:0,
+        hint:"看 ISBN 是否為中介。",
+        explanation:"CopyID 透過 ISBN 傳遞決定 Title/Publisher，故非 3NF。"
+      },
+      {
+        id:"nf7",
+        title:"Q7 專案分工",
+        relation:"ASSIGNMENT(EmployeeID, ProjectID, Role)",
+        key:"(EmployeeID, ProjectID)",
+        fds:[
+          "(EmployeeID, ProjectID) → Role"
+        ],
+        highest:"3NF",
+        violations:["none"],
+        decompose:[
+          "A. 不需分解",
+          "B. EMP(EmployeeID), PROJ(ProjectID), ROLE(Role)",
+          "C. ASSIGNMENT(EmployeeID, Role)"
+        ],
+        correctDec:0,
+        hint:"Role 是否由整個複合鍵決定？",
+        explanation:"沒有部分／傳遞相依，已達 3NF。"
+      },
+      {
+        id:"nf8",
+        title:"Q8 付款方式費率",
+        relation:"PAYMENT(PaymentID, OrderID, Amount, Method, MethodFeeRate)",
+        key:"PaymentID",
+        fds:[
+          "PaymentID → OrderID, Amount, Method",
+          "Method → MethodFeeRate"
+        ],
+        highest:"2NF",
+        violations:["transitive"],
+        decompose:[
+          "A. PAYMENT(PaymentID, OrderID, Amount, Method), PAY_METHOD(Method, MethodFeeRate)",
+          "B. PAYMENT(PaymentID, OrderID, Amount, Method, MethodFeeRate)",
+          "C. PAY_METHOD(PaymentID, MethodFeeRate)"
+        ],
+        correctDec:0,
+        hint:"Method 是不是在重複描述同一種資料？",
+        explanation:"MethodFeeRate 不直接依賴主鍵，而依賴 Method，屬傳遞相依。"
+      }
+    ];
+
+    const state = {
+      index: 0,
+      solved: {}
+    };
+
+    const questionBox = document.getElementById("questionBox");
+    const decomposeOptions = document.getElementById("decomposeOptions");
+    const nfSelect = document.getElementById("nfSelect");
+    const statusEl = document.getElementById("status");
+    const explainEl = document.getElementById("explain");
+    const progressText = document.getElementById("progressText");
+    const bar = document.getElementById("bar");
+
+    function currentQ(){ return questions[state.index]; }
+
+    function setStatus(type, msg){
+      statusEl.className = "status show " + type;
+      statusEl.textContent = msg;
+    }
+    function clearStatus(){
+      statusEl.className = "status";
+      statusEl.textContent = "";
+    }
+
+    function renderQuestion(){
+      clearStatus();
+      explainEl.style.display = "none";
+      explainEl.textContent = "";
+
+      const q = currentQ();
+      questionBox.innerHTML = `
+        <div><strong>${q.title}</strong></div>
+        <div class="table-code">${q.relation}</div>
+        <p><strong>候選鍵：</strong>${q.key}</p>
+        <p><strong>Functional Dependencies：</strong></p>
+        <ul style="margin:0 0 0 18px;color:#475569">
+          ${q.fds.map(fd => `<li>${fd}</li>`).join("")}
+        </ul>
+      `;
+
+      nfSelect.value = "";
+      document.querySelectorAll(".vcheck").forEach(c => c.checked = false);
+
+      decomposeOptions.innerHTML = q.decompose.map((txt, idx) => `
+        <label><input type="radio" name="dec" value="${idx}"> ${txt}</label>
+      `).join("");
+    }
+
+    function getSelectedViolations(){
+      return [...document.querySelectorAll(".vcheck:checked")].map(c => c.value).sort();
+    }
+
+    function arraysEqual(a,b){
+      if(a.length !== b.length) return false;
+      for(let i=0;i<a.length;i++) if(a[i] !== b[i]) return false;
+      return true;
+    }
+
+    function checkCurrent(){
+      const q = currentQ();
+      const nf = nfSelect.value;
+      const vio = getSelectedViolations();
+      const dec = document.querySelector("input[name='dec']:checked");
+
+      if(!nf || !dec){
+        setStatus("warn","請先完成：最高NF + 分解選項。");
+        return;
+      }
+
+      const nfOk = nf === q.highest;
+      const vioOk = arraysEqual(vio, [...q.violations].sort());
+      const decOk = Number(dec.value) === q.correctDec;
+
+      const correctParts = [nfOk, vioOk, decOk].filter(Boolean).length;
+      const total = 3;
+
+      if(correctParts === total){
+        setStatus("ok","✅ 全對！這題掌握得很好。");
+        state.solved[q.id] = true;
+      }else{
+        let msg = `部分正確：${correctParts}/${total}\n`;
+        if(!nfOk) msg += "• 最高NF判斷再想一想\n";
+        if(!vioOk) msg += "• 問題類型勾選不完整或多選\n";
+        if(!decOk) msg += "• 分解方案可再比較依賴關係";
+        setStatus("bad", msg.trim());
+      }
+
+      explainEl.style.display = "block";
+      explainEl.innerHTML = `
+        <strong>解析：</strong>${q.explanation}<br/>
+        <strong>提示回顧：</strong>${q.hint}
+      `;
+      updateProgress();
+    }
+
+    function nextQuestion(){
+      state.index = (state.index + 1) % questions.length;
+      renderQuestion();
+    }
+
+    function showHint(){
+      setStatus("warn","提示：" + currentQ().hint);
+    }
+
+    function updateProgress(){
+      const done = Object.keys(state.solved).length;
+      progressText.textContent = `${done} / ${questions.length} 題完成`;
+      bar.style.width = `${(done / questions.length) * 100}%`;
+    }
+
+    function resetAll(){
+      state.index = 0;
+      state.solved = {};
+      renderQuestion();
+      updateProgress();
+      setStatus("warn","已重置全部作答。");
+    }
+
+    document.getElementById("checkBtn").addEventListener("click", checkCurrent);
+    document.getElementById("nextBtn").addEventListener("click", nextQuestion);
+    document.getElementById("hintBtn").addEventListener("click", showHint);
+    document.getElementById("resetAllBtn").addEventListener("click", resetAll);
+
+    renderQuestion();
+    updateProgress();
+  </script>
+</body>
+</html>
