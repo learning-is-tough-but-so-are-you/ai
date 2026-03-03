@@ -77,10 +77,10 @@ window.ER_QUESTIONS = [
       {id:"badge", label:"門禁卡", x:760, y:560, w:180, h:82}
     ],
     relationships:[
-      {id:"r1", label:"配屬", a:"dept", b:"emp", expected:{ dept:{min:1,max:"M"}, emp:{min:1,max:"1"} }},
-      {id:"r2", label:"領用", a:"emp", b:"laptop", expected:{ emp:{min:0,max:"1"}, laptop:{min:0,max:"1"} }},
-      {id:"r3", label:"持有", a:"emp", b:"badge", expected:{ emp:{min:1,max:"1"}, badge:{min:1,max:"1"} }}
-    ]
+  {id:"r1", label:"配屬", a:"dept", b:"emp", expected:{ dept:{min:1,max:"1"}, emp:{min:1,max:"M"} }},
+  {id:"r2", label:"領用", a:"emp", b:"laptop", expected:{ emp:{min:0,max:"1"}, laptop:{min:0,max:"1"} }},
+  {id:"r3", label:"持有", a:"emp", b:"badge", expected:{ emp:{min:1,max:"1"}, badge:{min:1,max:"1"} }}
+]
   },
   {
     id:"q5",
@@ -97,11 +97,12 @@ window.ER_QUESTIONS = [
       {id:"payment", label:"付款", x:760, y:90, w:180, h:82},
       {id:"shipment", label:"出貨", x:760, y:560, w:180, h:82}
     ],
-    relationships:[
-      {id:"r1", label:"下單", a:"customer", b:"order", expected:{ customer:{min:0,max:"M"}, order:{min:1,max:"1"} }},
-      {id:"r2", label:"付款", a:"order", b:"payment", expected:{ order:{min:1,max:"M"}, payment:{min:1,max:"1"} }},
-      {id:"r3", label:"出貨", a:"order", b:"shipment", expected:{ order:{min:0,max:"M"}, shipment:{min:1,max:"1"} }}
-    ]
+    // Q5
+relationships:[
+  {id:"r1", label:"下單", a:"customer", b:"order", expected:{ customer:{min:1,max:"1"}, order:{min:0,max:"M"} }},
+  {id:"r2", label:"付款", a:"order", b:"payment", expected:{ order:{min:1,max:"1"}, payment:{min:1,max:"M"} }},
+  {id:"r3", label:"出貨", a:"order", b:"shipment", expected:{ order:{min:1,max:"1"}, shipment:{min:0,max:"M"} }}
+]
   },
   {
     id:"q6",
@@ -118,11 +119,12 @@ window.ER_QUESTIONS = [
       {id:"copy", label:"館藏複本", x:760, y:90, w:200, h:82},
       {id:"fine", label:"罰款", x:760, y:560, w:180, h:82}
     ],
-    relationships:[
-      {id:"r1", label:"借閱", a:"member", b:"loan", expected:{ member:{min:0,max:"M"}, loan:{min:1,max:"1"} }},
-      {id:"r2", label:"對應", a:"copy", b:"loan", expected:{ copy:{min:0,max:"M"}, loan:{min:1,max:"1"} }},
-      {id:"r3", label:"產生", a:"loan", b:"fine", expected:{ loan:{min:0,max:"1"}, fine:{min:1,max:"1"} }}
-    ]
+    // Q6
+relationships:[
+  {id:"r1", label:"借閱", a:"member", b:"loan", expected:{ member:{min:1,max:"1"}, loan:{min:0,max:"M"} }},
+  {id:"r2", label:"對應", a:"copy", b:"loan", expected:{ copy:{min:1,max:"1"}, loan:{min:0,max:"M"} }},
+  {id:"r3", label:"產生", a:"loan", b:"fine", expected:{ loan:{min:1,max:"1"}, fine:{min:0,max:"1"} }}
+]
   },
   {
     id:"q7",
@@ -140,12 +142,13 @@ window.ER_QUESTIONS = [
       {id:"employee", label:"員工", x:760, y:80, w:180, h:82},
       {id:"timesheet", label:"工時單", x:420, y:560, w:180, h:88}
     ],
-    relationships:[
-      {id:"r1", label:"分解", a:"project", b:"task", expected:{ project:{min:1,max:"M"}, task:{min:1,max:"1"} }},
-      {id:"r2", label:"指派", a:"employee", b:"task", expected:{ employee:{min:0,max:"M"}, task:{min:1,max:"1"} }},
-      {id:"r3", label:"填報", a:"employee", b:"timesheet", expected:{ employee:{min:0,max:"M"}, timesheet:{min:1,max:"1"} }},
-      {id:"r4", label:"對應", a:"task", b:"timesheet", expected:{ task:{min:0,max:"M"}, timesheet:{min:1,max:"1"} }}
-    ]
+    // Q7
+relationships:[
+  {id:"r1", label:"分解", a:"project", b:"task", expected:{ project:{min:1,max:"1"}, task:{min:1,max:"M"} }},
+  {id:"r2", label:"指派", a:"employee", b:"task", expected:{ employee:{min:1,max:"1"}, task:{min:0,max:"M"} }},
+  {id:"r3", label:"填報", a:"employee", b:"timesheet", expected:{ employee:{min:1,max:"1"}, timesheet:{min:0,max:"M"} }},
+  {id:"r4", label:"對應", a:"task", b:"timesheet", expected:{ task:{min:1,max:"1"}, timesheet:{min:0,max:"M"} }}
+]
   },
   {
     id:"q8",
@@ -165,12 +168,13 @@ window.ER_QUESTIONS = [
       {id:"warehouse", label:"倉庫", x:80, y:560, w:180, h:82},
       {id:"receipt", label:"到貨單", x:760, y:560, w:180, h:82}
     ],
-    relationships:[
-      {id:"r1", label:"開立", a:"warehouse", b:"po", expected:{ warehouse:{min:0,max:"M"}, po:{min:1,max:"1"} }},
-      {id:"r2", label:"供應", a:"supplier", b:"po", expected:{ supplier:{min:0,max:"M"}, po:{min:1,max:"1"} }},
-      {id:"r3", label:"品項", a:"product", b:"po", expected:{ product:{min:0,max:"M"}, po:{min:1,max:"1"} }},
-      {id:"r4", label:"到貨", a:"po", b:"receipt", expected:{ po:{min:0,max:"M"}, receipt:{min:1,max:"1"} }},
-      {id:"r5", label:"入庫", a:"warehouse", b:"receipt", expected:{ warehouse:{min:0,max:"M"}, receipt:{min:1,max:"1"} }}
-    ]
+    // Q8
+relationships:[
+  {id:"r1", label:"開立", a:"warehouse", b:"po", expected:{ warehouse:{min:1,max:"1"}, po:{min:0,max:"M"} }},
+  {id:"r2", label:"供應", a:"supplier", b:"po", expected:{ supplier:{min:1,max:"1"}, po:{min:0,max:"M"} }},
+  {id:"r3", label:"品項", a:"product", b:"po", expected:{ product:{min:1,max:"1"}, po:{min:0,max:"M"} }},
+  {id:"r4", label:"到貨", a:"po", b:"receipt", expected:{ po:{min:1,max:"1"}, receipt:{min:0,max:"M"} }},
+  {id:"r5", label:"入庫", a:"warehouse", b:"receipt", expected:{ warehouse:{min:1,max:"1"}, receipt:{min:0,max:"M"} }}
+]
   }
 ];
