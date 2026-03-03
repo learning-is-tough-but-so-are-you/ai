@@ -3,20 +3,19 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ER 練習（學生模式 / 教師模式）</title>
+  <title>ER 練習（學生模式）</title>
   <style>
     :root{
       --bg:#f3f6fb;
       --card:#fff;
       --text:#0f172a;
       --muted:#64748b;
-      --soft:#e2e8f0;
+      --soft:#dbe5f1;
       --line:#111827;
       --primary:#2563eb;
       --ok:#15803d;
       --bad:#b91c1c;
       --warn:#b45309;
-      --teacher:#7c3aed;
     }
     *{box-sizing:border-box}
     body{
@@ -26,11 +25,11 @@
       color:var(--text);
     }
     .app{
-      max-width:1460px;
+      max-width:1500px;
       margin:0 auto;
       padding:12px;
       display:grid;
-      grid-template-columns:500px 1fr;
+      grid-template-columns:460px 1fr;
       gap:12px;
     }
     .panel,.canvas{
@@ -39,96 +38,106 @@
       border-radius:14px;
       box-shadow:0 8px 24px rgba(15,23,42,.06);
     }
-    .panel{padding:12px}
-    .canvas{padding:8px;min-height:76vh}
+    .panel{
+      padding:12px;
+      max-height:calc(100vh - 24px);
+      overflow:auto;
+    }
+    .canvas{
+      padding:8px;
+      min-height:78vh;
+    }
     svg{
       width:100%;
       height:100%;
-      min-height:72vh;
+      min-height:74vh;
       display:block;
       border-radius:10px;
       background:radial-gradient(circle at 20% 10%, #fbfdff, #f8fbff 45%, #f7f9fd);
+      touch-action:manipulation;
     }
-    h1{font-size:1.14rem;margin:0 0 8px}
-    h2{font-size:1rem;margin:0 0 8px}
-    p,li{font-size:.92rem;color:var(--muted);line-height:1.5;margin:6px 0}
+
+    h1{font-size:1.2rem;margin:0 0 8px}
+    h2{font-size:1.02rem;margin:0 0 8px}
+    p,li{font-size:.95rem;color:var(--muted);line-height:1.5;margin:6px 0}
     .section{margin-top:10px;padding-top:10px;border-top:1px dashed #d7dee8}
     .stack{display:grid;gap:8px}
     .row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-    .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+    .row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+
     select,input,textarea,button{
       width:100%;
-      min-height:40px;
+      min-height:48px;
       border:1px solid #cbd5e1;
-      border-radius:10px;
-      padding:8px 10px;
-      font-size:.94rem;
+      border-radius:12px;
+      padding:10px 12px;
+      font-size:1rem;
       background:#fff;
       color:#0f172a;
     }
-    textarea{min-height:110px;resize:vertical}
     button{
       border:none;
       color:#fff;
       background:var(--primary);
       font-weight:700;
       cursor:pointer;
+      -webkit-tap-highlight-color:transparent;
     }
     .btn-ok{background:#16a34a}
     .btn-danger{background:#dc2626}
     .btn-secondary{background:#334155}
-    .btn-teacher{background:var(--teacher)}
-    .btn-ghost{
-      background:#e2e8f0;color:#0f172a;border:1px solid #cbd5e1;
-    }
+
     .chip{
-      display:inline-block;padding:2px 8px;border-radius:999px;
-      font-size:.78rem;font-weight:700;
+      display:inline-block;padding:4px 10px;border-radius:999px;
+      font-size:.8rem;font-weight:700;
       background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;
-      margin-right:6px;margin-bottom:4px;
-    }
-    .mode{
-      background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:8px;
-      font-size:.9rem;font-weight:700;color:#334155;
+      margin-right:6px;margin-bottom:6px;
     }
     .box{
-      background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:8px;
+      background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:10px;
     }
-    .box-title{font-size:.86rem;font-weight:700;color:#334155;margin-bottom:4px}
+    .box-title{font-size:.9rem;font-weight:700;color:#334155;margin-bottom:4px}
+
     .pair-list{
-      max-height:220px;overflow:auto;border:1px solid #e2e8f0;border-radius:10px;padding:8px;background:#fbfdff;
+      max-height:260px;overflow:auto;border:1px solid #e2e8f0;border-radius:10px;padding:8px;background:#fbfdff;
     }
     .pair-item{
       display:grid;grid-template-columns:1fr auto;align-items:center;gap:8px;
-      padding:6px 0;border-bottom:1px dashed #e2e8f0;
+      padding:8px 0;border-bottom:1px dashed #e2e8f0;
     }
     .pair-item:last-child{border-bottom:none}
-    .pair-label{font-size:.9rem;color:#334155;font-weight:600}
+    .pair-label{font-size:.95rem;color:#334155;font-weight:600}
     .toggle-btn{
-      min-height:32px;width:auto;padding:4px 10px;border-radius:999px;border:none;color:#fff;
-      font-size:.82rem;font-weight:700;cursor:pointer;background:#94a3b8;
+      min-height:38px;width:auto;padding:6px 12px;border-radius:999px;border:none;color:#fff;
+      font-size:.86rem;font-weight:700;cursor:pointer;background:#94a3b8;
     }
     .toggle-btn.on{background:#16a34a}
+
     .status{
-      display:none;white-space:pre-line;font-size:.9rem;font-weight:700;border-radius:10px;padding:10px;margin-top:8px;
+      display:none;white-space:pre-line;font-size:.95rem;font-weight:700;border-radius:10px;padding:10px;margin-top:8px;
     }
     .status.show{display:block}
     .status.ok{background:#dcfce7;color:#14532d;border-left:4px solid var(--ok)}
     .status.bad{background:#fee2e2;color:#7f1d1d;border-left:4px solid var(--bad)}
     .status.warn{background:#fef3c7;color:#78350f;border-left:4px solid var(--warn)}
+
     .progress{
-      font-size:.9rem;color:#334155;font-weight:700;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:8px;
+      font-size:.95rem;color:#334155;font-weight:700;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:10px;
     }
-    .teacher-box{
-      border:1px solid #ddd6fe;background:#faf5ff;border-radius:10px;padding:8px;
+    .note{font-size:.86rem;color:#6b7280}
+
+    @media (max-width:1180px){
+      .app{ grid-template-columns:1fr; }
+      .canvas{ order:1; min-height:58vh; }
+      .panel{ order:2; max-height:none; }
+      svg{ min-height:54vh; }
     }
-    .teacher-title{font-size:.9rem;font-weight:800;color:#5b21b6}
-    .hidden{display:none}
-    .note{font-size:.82rem;color:#6b7280}
-    @media (max-width:1120px){
-      .app{grid-template-columns:1fr}
-      .canvas{min-height:58vh}
-      svg{min-height:54vh}
+    @media (max-width:768px){
+      .row,.row-3{grid-template-columns:1fr}
+      h1{font-size:1.08rem}
+      h2{font-size:.98rem}
+      .canvas{min-height:52vh}
+      svg{min-height:50vh}
     }
   </style>
 </head>
@@ -140,15 +149,7 @@
         <span class="chip">第 1 步：先判斷哪些實體有關係</span>
         <span class="chip">第 2 步：再設定 o / | 與 1 / M</span>
       </p>
-
-      <div class="section stack">
-        <h2>模式切換</h2>
-        <div class="row">
-          <button id="studentModeBtn" class="btn-ok">學生模式</button>
-          <button id="teacherModeBtn" class="btn-teacher">教師模式</button>
-        </div>
-        <div id="modeInfo" class="mode"></div>
-      </div>
+      <p class="note">提示：本題使用「對側」語意；線端符號代表對方可對應的數量。</p>
 
       <div class="section stack">
         <h2>題目切換</h2>
@@ -164,79 +165,18 @@
         <div id="questionInfo" class="box"></div>
       </div>
 
-      <div id="studentArea" class="section stack">
+      <div class="section stack">
         <h2>第 1 步：勾選有關係的實體配對</h2>
         <div id="pairList" class="pair-list"></div>
         <button id="checkStep1Btn" class="btn-ok">檢查第 1 步並解鎖第 2 步</button>
 
         <h2 style="margin-top:8px;">第 2 步：設定端點符號</h2>
-        <p class="note">請直接點圖上的符號切換：最小參與（o / |）、最大基數（1 / M）</p>
+        <p class="note">直接點圖上的符號切換：最小參與（o / |）、最大基數（1 / M）</p>
         <div class="row">
           <button id="checkCurrentBtn" class="btn-ok">檢查本題完整答案</button>
           <button id="resetBtn" class="btn-danger">重置本題</button>
         </div>
         <button id="checkAllBtn">檢查全部題目</button>
-      </div>
-
-      <div id="teacherArea" class="section stack hidden">
-        <h2>教師模式：答案鍵編輯</h2>
-        <div class="teacher-box stack">
-          <div class="teacher-title">關係答案設定（影響第 1 步與第 2 步）</div>
-          <select id="relSelect"></select>
-          <div class="row">
-            <label style="display:flex;align-items:center;gap:8px;font-size:.9rem;color:#334155;">
-              <input id="relEnabled" type="checkbox" style="width:18px;height:18px;min-height:auto;">
-              此關係列入正解（第 1 步）
-            </label>
-            <button id="loadRelBtn" class="btn-ghost">載入該關係設定</button>
-          </div>
-
-          <div class="box">
-            <div class="box-title">端點 A（關係中第一個實體）</div>
-            <div id="endALabel" class="note"></div>
-            <div class="row">
-              <select id="aMin">
-                <option value="0">o（可選）</option>
-                <option value="1">|（必須）</option>
-              </select>
-              <select id="aMax">
-                <option value="1">1</option>
-                <option value="M">M</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="box">
-            <div class="box-title">端點 B（關係中第二個實體）</div>
-            <div id="endBLabel" class="note"></div>
-            <div class="row">
-              <select id="bMin">
-                <option value="0">o（可選）</option>
-                <option value="1">|（必須）</option>
-              </select>
-              <select id="bMax">
-                <option value="1">1</option>
-                <option value="M">M</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="row3">
-            <button id="saveRelBtn" class="btn-teacher">儲存此關係答案</button>
-            <button id="resetKeyBtn" class="btn-secondary">重置本題答案鍵</button>
-            <button id="toggleOverlayBtn">顯示/隱藏答案標註</button>
-          </div>
-        </div>
-
-        <div class="teacher-box stack">
-          <div class="teacher-title">答案鍵 JSON（匯出 / 匯入）</div>
-          <textarea id="jsonBox" placeholder="這裡會顯示答案鍵 JSON，可手動貼上後匯入"></textarea>
-          <div class="row">
-            <button id="exportBtn">匯出答案鍵 JSON</button>
-            <button id="importBtn" class="btn-teacher">匯入答案鍵 JSON</button>
-          </div>
-          <p class="note">提示：匯入後會覆蓋目前的教師答案鍵。</p>
-        </div>
       </div>
 
       <div id="progress" class="progress"></div>
@@ -248,80 +188,12 @@
     </main>
   </div>
 
+  <!-- 題庫檔（同層） -->
+  <script src="./er-question.js"></script>
+
   <script>
-    // ===== 題庫 =====
-    const questions = [
-      {
-        id:"q1",
-        title:"Q1 外送平台",
-        prompt:"先判斷哪些實體有直接關係，再設定端點 o/| 與 1/M。",
-        rules:[
-          "騎手可以配送 0 到多張訂單。",
-          "每張訂單必須且只能由 1 位騎手配送。",
-          "顧客可以下 0 到多張訂單。",
-          "每張訂單必須且只能由 1 位顧客下單。"
-        ],
-        entities:[
-          {id:"order", label:"訂單", x:420, y:40, w:160, h:78},
-          {id:"rider", label:"騎手", x:70, y:560, w:190, h:88},
-          {id:"customer", label:"顧客", x:760, y:560, w:190, h:88}
-        ],
-        relationships:[
-          {id:"r1", label:"配送", cx:270, cy:350, w:180, h:84, a:"order", b:"rider",
-            expected:{ order:{min:1,max:"1"}, rider:{min:0,max:"M"} }},
-          {id:"r2", label:"下單", cx:730, cy:350, w:180, h:84, a:"order", b:"customer",
-            expected:{ order:{min:1,max:"1"}, customer:{min:0,max:"M"} }}
-        ]
-      },
-      {
-        id:"q2",
-        title:"Q2 選課系統",
-        prompt:"以選課紀錄為核心，判斷學生、課程、教師之間的關係。",
-        rules:[
-          "學生可有 0 到多筆選課紀錄；每筆選課紀錄必屬 1 位學生。",
-          "課程可有 0 到多筆選課紀錄；每筆選課紀錄必屬 1 門課程。",
-          "教師可教授 0 到多門課程；每門課程必由 1 位教師教授。"
-        ],
-        entities:[
-          {id:"student", label:"學生", x:60, y:80, w:180, h:82},
-          {id:"enroll", label:"選課紀錄", x:390, y:560, w:220, h:88},
-          {id:"course", label:"課程", x:760, y:80, w:180, h:82},
-          {id:"teacher", label:"教師", x:390, y:80, w:180, h:82}
-        ],
-        relationships:[
-          {id:"r1", label:"產生", cx:260, cy:330, w:170, h:80, a:"student", b:"enroll",
-            expected:{ student:{min:0,max:"M"}, enroll:{min:1,max:"1"} }},
-          {id:"r2", label:"對應", cx:700, cy:330, w:170, h:80, a:"course", b:"enroll",
-            expected:{ course:{min:0,max:"M"}, enroll:{min:1,max:"1"} }},
-          {id:"r3", label:"教授", cx:530, cy:200, w:170, h:80, a:"teacher", b:"course",
-            expected:{ teacher:{min:0,max:"M"}, course:{min:1,max:"1"} }}
-        ]
-      },
-      {
-        id:"q3",
-        title:"Q3 醫院預約",
-        prompt:"判斷醫師、病人、預約、科別的關係。",
-        rules:[
-          "醫師可有 0 到多次預約；每次預約必對應 1 位醫師。",
-          "病人可有 0 到多次預約；每次預約必對應 1 位病人。",
-          "科別必有 1 到多位醫師；每位醫師必屬 1 個科別。"
-        ],
-        entities:[
-          {id:"doctor", label:"醫師", x:70, y:90, w:180, h:82},
-          {id:"patient", label:"病人", x:760, y:90, w:180, h:82},
-          {id:"appt", label:"預約", x:410, y:560, w:180, h:88},
-          {id:"dept", label:"科別", x:410, y:90, w:180, h:82}
-        ],
-        relationships:[
-          {id:"r1", label:"接診", cx:270, cy:330, w:170, h:80, a:"doctor", b:"appt",
-            expected:{ doctor:{min:0,max:"M"}, appt:{min:1,max:"1"} }},
-          {id:"r2", label:"掛號", cx:700, cy:330, w:170, h:80, a:"patient", b:"appt",
-            expected:{ patient:{min:0,max:"M"}, appt:{min:1,max:"1"} }},
-          {id:"r3", label:"隸屬", cx:410, cy:220, w:170, h:80, a:"dept", b:"doctor",
-            expected:{ dept:{min:1,max:"M"}, doctor:{min:1,max:"1"} }}
-        ]
-      }
-    ];
+    // ===== questions 由 er-question.js 提供 =====
+    const questions = window.ER_QUESTIONS || [];
 
     // ===== DOM =====
     const svg = document.getElementById("svg");
@@ -330,35 +202,11 @@
     const pairList = document.getElementById("pairList");
     const statusEl = document.getElementById("status");
     const progressEl = document.getElementById("progress");
-    const modeInfo = document.getElementById("modeInfo");
-
-    const studentArea = document.getElementById("studentArea");
-    const teacherArea = document.getElementById("teacherArea");
-
-    // teacher ui
-    const relSelect = document.getElementById("relSelect");
-    const relEnabled = document.getElementById("relEnabled");
-    const endALabel = document.getElementById("endALabel");
-    const endBLabel = document.getElementById("endBLabel");
-    const aMin = document.getElementById("aMin");
-    const aMax = document.getElementById("aMax");
-    const bMin = document.getElementById("bMin");
-    const bMax = document.getElementById("bMax");
-    const jsonBox = document.getElementById("jsonBox");
 
     // ===== state =====
     const state = {
-      mode: "student", // "student" | "teacher"
       qIndex: 0,
-      showTeacherOverlay: false,
-      // student answers
-      student: {
-        // [qid]: {pairChoice, endpoint, unlocked}
-      },
-      // teacher answer key
-      teacherKey: {
-        // [qid]: { [relId]: {enabled, expected:{[a]:{min,max},[b]:{min,max}} } }
-      }
+      student: {}
     };
 
     function pairKey(a,b){ return [a,b].sort().join("|"); }
@@ -403,39 +251,12 @@
       }
     }
 
-    function ensureTeacherKey(q){
-      if(!state.teacherKey[q.id]){
-        const key = {};
-        q.relationships.forEach(r => {
-          key[r.id] = {
-            enabled: true,
-            expected: {
-              [r.a]: {min:r.expected[r.a].min, max:r.expected[r.a].max},
-              [r.b]: {min:r.expected[r.b].min, max:r.expected[r.b].max}
-            }
-          };
-        });
-        state.teacherKey[q.id] = key;
-      }
-    }
-
     function expectedPairSet(q){
-      ensureTeacherKey(q);
-      const key = state.teacherKey[q.id];
       const s = new Set();
-      q.relationships.forEach(r => {
-        if(key[r.id]?.enabled) s.add(pairKey(r.a,r.b));
-      });
+      q.relationships.forEach(r => s.add(pairKey(r.a,r.b)));
       return s;
     }
 
-    function activeRelationships(q){
-      ensureTeacherKey(q);
-      const key = state.teacherKey[q.id];
-      return q.relationships.filter(r => key[r.id]?.enabled);
-    }
-
-    // ===== 幾何 =====
     function pointOnRectBorder(rect, target){
       const cx = rect.x + rect.w/2;
       const cy = rect.y + rect.h/2;
@@ -461,37 +282,63 @@
       return {x:p1.x+(p2.x-p1.x)*t, y:p1.y+(p2.y-p1.y)*t};
     }
 
-    // ===== render meta =====
+    function buildLayout(q){
+      const entities = q.entities.map(e => ({...e}));
+      const byId = {};
+
+      if(entities.length >= 4){
+        const cx = 500, cy = 350;
+        const rx = 360, ry = 250;
+        entities.forEach((e, i) => {
+          const a = -Math.PI/2 + (Math.PI * 2 * i / entities.length);
+          e.x = Math.max(20, Math.min(1000 - e.w - 20, cx + rx * Math.cos(a) - e.w/2));
+          e.y = Math.max(20, Math.min(700 - e.h - 20, cy + ry * Math.sin(a) - e.h/2));
+        });
+      }
+
+      entities.forEach(e => byId[e.id] = e);
+
+      const relationships = q.relationships.map((r, i) => {
+        const ea = byId[r.a], eb = byId[r.b];
+        const ca = {x:ea.x + ea.w/2, y:ea.y + ea.h/2};
+        const cb = {x:eb.x + eb.w/2, y:eb.y + eb.h/2};
+
+        const mx = (ca.x + cb.x)/2;
+        const my = (ca.y + cb.y)/2;
+        const dx = cb.x - ca.x, dy = cb.y - ca.y;
+        const len = Math.hypot(dx,dy) || 1;
+        const nx = -dy/len, ny = dx/len;
+
+        const offsetBase = 30;
+        const offsetVar = ((i % 3) - 1) * 18;
+        const offset = offsetBase + offsetVar;
+
+        return {
+          ...r,
+          cx: mx + nx * offset,
+          cy: my + ny * offset,
+          w: 168,
+          h: 80
+        };
+      });
+
+      return {entities, byId, relationships};
+    }
+
     function renderMeta(){
       const q = getQ();
       ensureStudentBucket(q);
-      ensureTeacherKey(q);
-
-      modeInfo.textContent = state.mode === "student"
-        ? "目前：學生模式（可作答與檢查）"
-        : "目前：教師模式（可編輯答案鍵、匯出/匯入）";
 
       questionInfo.innerHTML = `
         <div class="box-title">${q.title}</div>
-        <div style="font-size:.9rem;color:#475569;margin-bottom:6px;">${q.prompt}</div>
+        <div style="font-size:.95rem;color:#475569;margin-bottom:6px;">${q.prompt}</div>
         <div class="box-title">業務規則</div>
         <ul style="margin:4px 0 0 16px;padding:0;">
-          ${q.rules.map(r => `<li style="font-size:.88rem;color:#475569;margin:4px 0;">${r}</li>`).join("")}
+          ${q.rules.map(r => `<li style="font-size:.9rem;color:#475569;margin:4px 0;">${r}</li>`).join("")}
         </ul>
       `;
-
-      // mode visibility
-      if(state.mode === "student"){
-        studentArea.classList.remove("hidden");
-        teacherArea.classList.add("hidden");
-      }else{
-        studentArea.classList.add("hidden");
-        teacherArea.classList.remove("hidden");
-        renderTeacherEditor();
-      }
     }
 
-    // ===== render pair list (student step1) =====
     function renderPairList(){
       const q = getQ();
       const ans = state.student[q.id];
@@ -521,93 +368,17 @@
       });
     }
 
-    // ===== teacher editor =====
-    function renderTeacherEditor(){
-      const q = getQ();
-      const key = state.teacherKey[q.id];
-      relSelect.innerHTML = q.relationships.map(r =>
-        `<option value="${r.id}">${r.label}（${entityLabel(q,r.a)} ↔ ${entityLabel(q,r.b)}）</option>`
-      ).join("");
-      loadRelToEditor();
-    }
-
-    function loadRelToEditor(){
-      const q = getQ();
-      const key = state.teacherKey[q.id];
-      const rid = relSelect.value || q.relationships[0].id;
-      const rel = q.relationships.find(r => r.id === rid);
-      const cfg = key[rid];
-
-      endALabel.textContent = `端點 A：${entityLabel(q, rel.a)}`;
-      endBLabel.textContent = `端點 B：${entityLabel(q, rel.b)}`;
-
-      relEnabled.checked = !!cfg.enabled;
-      aMin.value = String(cfg.expected[rel.a].min);
-      aMax.value = cfg.expected[rel.a].max;
-      bMin.value = String(cfg.expected[rel.b].min);
-      bMax.value = cfg.expected[rel.b].max;
-    }
-
-    function saveRelFromEditor(){
-      const q = getQ();
-      const key = state.teacherKey[q.id];
-      const rid = relSelect.value;
-      const rel = q.relationships.find(r => r.id === rid);
-      key[rid] = {
-        enabled: relEnabled.checked,
-        expected: {
-          [rel.a]: {min:Number(aMin.value), max:aMax.value},
-          [rel.b]: {min:Number(bMin.value), max:bMax.value}
-        }
-      };
-      setStatus("ok", "教師答案鍵已更新。");
-      drawCanvas();
-    }
-
-    function resetCurrentTeacherKey(){
-      const q = getQ();
-      delete state.teacherKey[q.id];
-      ensureTeacherKey(q);
-      renderTeacherEditor();
-      setStatus("warn", "本題答案鍵已重置為預設值。");
-      drawCanvas();
-    }
-
-    function exportTeacherKey(){
-      jsonBox.value = JSON.stringify(state.teacherKey, null, 2);
-      setStatus("ok", "已匯出答案鍵到文字框。");
-    }
-
-    function importTeacherKey(){
-      try{
-        const obj = JSON.parse(jsonBox.value);
-        if(!obj || typeof obj !== "object") throw new Error("格式錯誤");
-        state.teacherKey = obj;
-        // 確保題目完整 key
-        questions.forEach(q => ensureTeacherKey(q));
-        setStatus("ok", "答案鍵匯入成功。");
-        renderTeacherEditor();
-        drawCanvas();
-      }catch(e){
-        setStatus("bad", "匯入失敗：JSON 格式錯誤或資料不完整。");
-      }
-    }
-
-    // ===== draw =====
     function drawCanvas(){
       const q = getQ();
       ensureStudentBucket(q);
-      ensureTeacherKey(q);
-
       const sAns = state.student[q.id];
-      const tKey = state.teacherKey[q.id];
+      const layout = buildLayout(q);
 
       svg.innerHTML = "";
       const g = document.createElementNS("http://www.w3.org/2000/svg","g");
       svg.appendChild(g);
 
-      // entities
-      q.entities.forEach(e => {
+      layout.entities.forEach(e => {
         const rect = document.createElementNS("http://www.w3.org/2000/svg","rect");
         rect.setAttribute("x",e.x); rect.setAttribute("y",e.y);
         rect.setAttribute("width",e.w); rect.setAttribute("height",e.h);
@@ -627,12 +398,11 @@
         g.appendChild(tx);
       });
 
-      // step1 selected pairs as dashed lines
       Object.entries(sAns.pairChoice).forEach(([k,v]) => {
         if(!v) return;
         const [a,b] = k.split("|");
-        const ea = q.entities.find(x => x.id===a);
-        const eb = q.entities.find(x => x.id===b);
+        const ea = layout.byId[a];
+        const eb = layout.byId[b];
         if(!ea || !eb) return;
 
         const ca = {x:ea.x+ea.w/2, y:ea.y+ea.h/2};
@@ -649,10 +419,8 @@
         g.appendChild(line);
       });
 
-      // draw formal relationships if unlocked OR teacher mode
-      const canShowFormal = sAns.unlocked || state.mode === "teacher";
-      if(canShowFormal){
-        activeRelationships(q).forEach(r => {
+      if(sAns.unlocked){
+        layout.relationships.forEach(r => {
           const dp = [
             [r.cx, r.cy-r.h/2],
             [r.cx+r.w/2, r.cy],
@@ -676,7 +444,7 @@
           g.appendChild(dt);
 
           [r.a, r.b].forEach(entId => {
-            const e = q.entities.find(x => x.id===entId);
+            const e = layout.byId[entId];
             const relCenter = {x:r.cx,y:r.cy};
             const entCenter = {x:e.x+e.w/2,y:e.y+e.h/2};
 
@@ -690,26 +458,20 @@
             line.setAttribute("stroke-width","2.8");
             g.appendChild(line);
 
-            // 間距拉大
             const minPos = lerp(pEntity,pRel,0.08);
-            const maxPos = lerp(pEntity,pRel,0.36);
+            const maxPos = lerp(pEntity,pRel,0.38);
 
             const epKey = endpointKey(r.id, entId);
             const cur = sAns.endpoint[epKey];
 
-            // min symbol (clickable in student mode unlocked OR teacher mode)
-            const canInteract = (state.mode === "teacher") || (state.mode==="student" && sAns.unlocked);
-
             const minWrap = document.createElementNS("http://www.w3.org/2000/svg","g");
-            if(canInteract){
-              minWrap.setAttribute("style","cursor:pointer");
-              minWrap.dataset.action = "toggle-min";
-              minWrap.dataset.key = epKey;
-            }
+            minWrap.setAttribute("style","cursor:pointer");
+            minWrap.dataset.action = "toggle-min";
+            minWrap.dataset.key = epKey;
 
             const hit = document.createElementNS("http://www.w3.org/2000/svg","circle");
             hit.setAttribute("cx",minPos.x); hit.setAttribute("cy",minPos.y);
-            hit.setAttribute("r","18");
+            hit.setAttribute("r","22");
             hit.setAttribute("fill","rgba(37,99,235,0.08)");
             hit.setAttribute("stroke","none");
             minWrap.appendChild(hit);
@@ -717,7 +479,7 @@
             if(cur.min===0){
               const c = document.createElementNS("http://www.w3.org/2000/svg","circle");
               c.setAttribute("cx",minPos.x); c.setAttribute("cy",minPos.y);
-              c.setAttribute("r","8");
+              c.setAttribute("r","8.5");
               c.setAttribute("fill","#fff");
               c.setAttribute("stroke","#0f172a");
               c.setAttribute("stroke-width","2.8");
@@ -738,48 +500,31 @@
             }
             g.appendChild(minWrap);
 
-            // max symbol
             const maxWrap = document.createElementNS("http://www.w3.org/2000/svg","g");
-            if(canInteract){
-              maxWrap.setAttribute("style","cursor:pointer");
-              maxWrap.dataset.action = "toggle-max";
-              maxWrap.dataset.key = epKey;
-            }
+            maxWrap.setAttribute("style","cursor:pointer");
+            maxWrap.dataset.action = "toggle-max";
+            maxWrap.dataset.key = epKey;
 
             const bg = document.createElementNS("http://www.w3.org/2000/svg","rect");
-            bg.setAttribute("x",maxPos.x-18); bg.setAttribute("y",maxPos.y-15);
-            bg.setAttribute("width","36"); bg.setAttribute("height","28");
-            bg.setAttribute("rx","9");
+            bg.setAttribute("x",maxPos.x-22); bg.setAttribute("y",maxPos.y-17);
+            bg.setAttribute("width","44"); bg.setAttribute("height","34");
+            bg.setAttribute("rx","10");
             bg.setAttribute("fill","#fff");
             bg.setAttribute("stroke","#94a3b8");
             bg.setAttribute("stroke-width","1.5");
             maxWrap.appendChild(bg);
 
             const mt = document.createElementNS("http://www.w3.org/2000/svg","text");
-            mt.setAttribute("x",maxPos.x); mt.setAttribute("y",maxPos.y+6);
+            mt.setAttribute("x",maxPos.x); mt.setAttribute("y",maxPos.y+7);
             mt.setAttribute("text-anchor","middle");
-            mt.setAttribute("font-size","20");
+            mt.setAttribute("font-size","22");
             mt.setAttribute("font-family","monospace");
             mt.textContent = cur.max;
             maxWrap.appendChild(mt);
             g.appendChild(maxWrap);
-
-            // teacher overlay: show expected key in orange
-            if(state.mode==="teacher" && state.showTeacherOverlay){
-              const exp = tKey[r.id].expected[entId];
-              const ov = document.createElementNS("http://www.w3.org/2000/svg","text");
-              ov.setAttribute("x", maxPos.x + 24);
-              ov.setAttribute("y", maxPos.y - 10);
-              ov.setAttribute("font-size","13");
-              ov.setAttribute("font-family","monospace");
-              ov.setAttribute("fill","#b45309");
-              ov.textContent = `答案 ${exp.min}..${exp.max}`;
-              g.appendChild(ov);
-            }
           });
         });
 
-        // click binding
         svg.querySelectorAll("[data-action='toggle-min']").forEach(el => {
           el.addEventListener("click", () => {
             const k = el.dataset.key;
@@ -801,14 +546,11 @@
       updateProgress();
     }
 
-    // ===== check =====
     function checkStep1AndUnlock(){
       const q = getQ();
       const sAns = state.student[q.id];
       const exp = expectedPairSet(q);
-      const got = new Set(
-        Object.entries(sAns.pairChoice).filter(([,v])=>v).map(([k])=>k)
-      );
+      const got = new Set(Object.entries(sAns.pairChoice).filter(([,v])=>v).map(([k])=>k));
 
       const missing = [...exp].filter(k => !got.has(k));
       const extra = [...got].filter(k => !exp.has(k));
@@ -829,12 +571,11 @@
     function checkCurrentFull(){
       const q = getQ();
       const sAns = state.student[q.id];
-      const tKey = state.teacherKey[q.id];
 
-      // step1
       const expSet = expectedPairSet(q);
       const gotSet = new Set(Object.entries(sAns.pairChoice).filter(([,v])=>v).map(([k])=>k));
       const step1Ok = [...expSet].every(k=>gotSet.has(k)) && [...gotSet].every(k=>expSet.has(k));
+
       if(!step1Ok){
         setStatus("warn","請先把第 1 步答對再檢查完整答案。");
         return;
@@ -843,11 +584,11 @@
       sAns.unlocked = true;
       const wrong = [];
 
-      activeRelationships(q).forEach(r => {
+      q.relationships.forEach(r => {
         [r.a, r.b].forEach(entId => {
           const ek = endpointKey(r.id, entId);
           const got = sAns.endpoint[ek];
-          const exp = tKey[r.id].expected[entId];
+          const exp = r.expected[entId];
           if(got.min !== exp.min || got.max !== exp.max){
             wrong.push(`「${r.label}」在「${entityLabel(q,entId)}」端應為 ${exp.min}..${exp.max}`);
           }
@@ -864,21 +605,17 @@
 
     function isSolved(q){
       ensureStudentBucket(q);
-      ensureTeacherKey(q);
       const sAns = state.student[q.id];
-      const tKey = state.teacherKey[q.id];
 
-      // step1
       const expSet = expectedPairSet(q);
       const gotSet = new Set(Object.entries(sAns.pairChoice).filter(([,v])=>v).map(([k])=>k));
       const step1Ok = [...expSet].every(k=>gotSet.has(k)) && [...gotSet].every(k=>expSet.has(k));
       if(!step1Ok) return false;
 
-      // step2
-      for(const r of activeRelationships(q)){
+      for(const r of q.relationships){
         for(const entId of [r.a, r.b]){
           const got = sAns.endpoint[endpointKey(r.id,entId)];
-          const exp = tKey[r.id].expected[entId];
+          const exp = r.expected[entId];
           if(got.min !== exp.min || got.max !== exp.max) return false;
         }
       }
@@ -909,67 +646,39 @@
       drawCanvas();
     }
 
-    // ===== mode / navigation =====
-    function setMode(mode){
-      state.mode = mode;
-      clearStatus();
-      renderMeta();
-      renderPairList();
-      drawCanvas();
-    }
-
     function goTo(i){
       state.qIndex = Math.max(0, Math.min(questions.length-1, i));
       questionSelect.value = String(state.qIndex);
       const q = getQ();
       ensureStudentBucket(q);
-      ensureTeacherKey(q);
       clearStatus();
       renderMeta();
       renderPairList();
       drawCanvas();
     }
 
-    // ===== init =====
     function init(){
-      questions.forEach(q => {
-        ensureTeacherKey(q);
-        ensureStudentBucket(q);
-      });
+      if(!Array.isArray(questions) || questions.length === 0){
+        setStatus("bad", "題庫載入失敗：請確認 er-question.js 與 index.html 在同一層。");
+        return;
+      }
+
+      questions.forEach(q => ensureStudentBucket(q));
 
       questionSelect.innerHTML = questions.map((q,i)=>
         `<option value="${i}">${q.title}</option>`
       ).join("");
 
-      // nav
       document.getElementById("prevBtn").addEventListener("click", () => goTo(state.qIndex-1));
       document.getElementById("nextBtn").addEventListener("click", () => goTo(state.qIndex+1));
       questionSelect.addEventListener("change", () => goTo(Number(questionSelect.value)));
 
-      // student actions
       document.getElementById("checkStep1Btn").addEventListener("click", checkStep1AndUnlock);
       document.getElementById("checkCurrentBtn").addEventListener("click", checkCurrentFull);
       document.getElementById("checkAllBtn").addEventListener("click", checkAll);
       document.getElementById("resetBtn").addEventListener("click", resetCurrentStudent);
 
-      // mode
-      document.getElementById("studentModeBtn").addEventListener("click", ()=>setMode("student"));
-      document.getElementById("teacherModeBtn").addEventListener("click", ()=>setMode("teacher"));
-
-      // teacher actions
-      relSelect.addEventListener("change", loadRelToEditor);
-      document.getElementById("loadRelBtn").addEventListener("click", loadRelToEditor);
-      document.getElementById("saveRelBtn").addEventListener("click", saveRelFromEditor);
-      document.getElementById("resetKeyBtn").addEventListener("click", resetCurrentTeacherKey);
-      document.getElementById("toggleOverlayBtn").addEventListener("click", () => {
-        state.showTeacherOverlay = !state.showTeacherOverlay;
-        drawCanvas();
-      });
-      document.getElementById("exportBtn").addEventListener("click", exportTeacherKey);
-      document.getElementById("importBtn").addEventListener("click", importTeacherKey);
-
       goTo(0);
-      setMode("student");
     }
 
     init();
