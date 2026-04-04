@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<title>Ring of Fire — 香港版</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
+<style>
+body {
+  margin:0;
+  padding:16px;
+  font-family:-apple-system,BlinkMacSystemFont,sans-serif;
+  background:linear-gradient(135deg,#111,#333);
+  color:#fff;
+  text-align:center;
+}
+.card{
+  width:220px;height:320px;margin:12px auto;
+  background:#fff;color:#000;border-radius:16px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:3rem;
+}
+.rule{min-height:2.5em;font-size:1.2rem}
+.controls{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+button{padding:12px 16px;border-radius:12px;border:none;font-size:1rem}
+.draw{background:#e74c3c;color:#fff}
+.reset{background:#3498db;color:#fff}
+
+.tracker{
+  background:rgba(255,255,255,0.1);
+  margin:14px auto;padding:12px;border-radius:12px;
+  max-width:460px;text-align:left;font-size:.95rem
+}
+.tracker h3{margin:0 0 6px;color:#ffd966}
+
+.cards-wrapper{overflow-x:auto;margin-top:10px}
+.cards-grid{
+  display:grid;grid-template-columns:repeat(13,1fr);
+  gap:6px;min-width:520px
+}
+.mini-card{
+  background:#fff;color:#000;padding:8px 0;
+  border-radius:8px;text-align:center
+}
+.drawn{background:#555!important;color:#aaa!important;text-decoration:line-through}
+</style>
+</head>
+
+<body>
+
+<h1>🍺 Ring of Fire</h1>
+
+<div class="card" id="mainCard">🂠</div>
+<div class="rule" id="ruleText">撳「抽牌」開始</div>
+
+<div class="controls">
+  <button class="draw" onclick="drawCard()">抽牌</button>
+  <button class="reset" onclick="resetGame()">重新開始</button>
+</div>
+
+<div class="tracker">
+  <h3>📌 狀態追蹤</h3>
+  <div id="t7">7️⃣ 痴線佬：—</div>
+  <div id="t8">8️⃣ 連結：</div>
+  <div id="t9">9️⃣ 陪酒員：—</div>
+  <div id="tJ">J️⃣ 規矩：</div>
+  <ul id="jRules"></ul>
+</div>
+
+<div class="cards-wrapper">
+  <div class="cards-grid" id="cardGrid"></div>
+</div>
+
+<script>
+const suits=["♠","♥","♦","♣"];
+const values=["A","2","3","4","5","6","7","8","9","10","J","Q","K"];
+
+let deck=[], drawn=new Set();
+let links=[];        // ✅ MULTIPLE 8 LINKS
+let jRules=[];
+let crazyGuy="", nineGuy="";
+
+const rules={
+"A":"全場飲",
+"2":"指人飲",
+"3":"自己飲",
+"4":"撞機",
+"5":"男人飲",
+"6":"女人飲",
+"7":"痴線佬（唔可以同佢講嘢）",
+"8":"永久連結",
+"9":"陪酒員",
+"10":"開Topic",
+"J":"制定規矩",
+"Q":"Toilet!",
+"K":"火環"
+};
+
+function buildDeck(){
+  deck=[]; drawn.clear();
+  suits.forEach(s=>values.forEach(v=>deck.push({v,s})));
+  for(let i=deck.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [deck[i],deck[j]]=[deck[j],deck[i]];
+  }
+  renderGrid();
+}
+
+function drawCard(){
+  if(!deck.length){ruleText.innerText="52 張抽晒啦！";return;}
+  const c=deck.pop(), id=c.v+c.s;
+  drawn.add(id);
+  mainCard.innerText=id;
+  ruleText.innerText=rules[c.v];
+
+  if(c.v==="7"){
+    crazyGuy=prompt("邊個係痴線佬？");
+    if(crazyGuy) t7.innerText=`7️⃣ 痴線佬：${crazyGuy}`;
+  }
+
+  if(c.v==="8"){
+    const a=prompt("連結玩家 1：");
+    const b=prompt("連結玩家 2：");
+    if(a&&b){
+      links.push({a,b});
+      renderLinks();
+    }
+  }
+
+  if(c.v==="9"){
+    nineGuy=prompt("邊個係陪酒員？");
+    if(nineGuy) t9.innerText=`9️⃣ 陪酒員：${nineGuy}`;
+  }
+
+  if(c.v==="J"){
+    const r=prompt("輸入新規矩：");
+    if(r){ jRules.push(r); renderJ(); }
+  }
+
+  renderGrid();
+}
+
+function renderLinks(){
+  if(!links.length){ t8.innerText="8️⃣ 連結：—"; return; }
+  t8.innerHTML="8️⃣ 連結：<br>"+links.map(
+    l=>`• ${l.a} ↔ ${l.b}`
+  ).join("<br>");
+}
+
+function renderJ(){
+  jRulesEl.innerHTML="";
+  jRules.forEach(r=>{
+    const li=document.createElement("li");
+    li.innerText=r;
+    jRulesEl.appendChild(li);
+  });
+}
+
+function renderGrid(){
+  cardGrid.innerHTML="";
+  suits.forEach(s=>values.forEach(v=>{
+    const d=document.createElement("div");
+    d.className="mini-card"+(drawn.has(v+s)?" drawn":"");
+    d.innerText=v+s;
+    cardGrid.appendChild(d);
+  }));
+}
+
+function resetGame(){
+  links=[]; jRules=[];
+  t7.innerText="7️⃣ 痴線佬：—";
+  t8.innerText="8️⃣ 連結：—";
+  t9.innerText="9️⃣ 陪酒員：—";
+  tJ.innerText="J️⃣ 規矩：";
+  jRulesEl.innerHTML="";
+  mainCard.innerText="🂠";
+  ruleText.innerText="撳「抽牌」開始";
+  buildDeck();
+}
+
+const jRulesEl=document.getElementById("jRules");
+buildDeck();
+</script>
+
+</body>
+</html>
