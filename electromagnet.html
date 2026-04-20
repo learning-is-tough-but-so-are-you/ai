@@ -1,0 +1,561 @@
+<!DOCTYPE html><html lang="zh-TW"><head><meta name="x-poe-datastore-behavior" content="local_only"><meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://code.jquery.com https://unpkg.com https://d3js.org https://threejs.org https://cdn.plot.ly https://stackpath.bootstrapcdn.com https://maps.googleapis.com https://cdn.tailwindcss.com https://ajax.googleapis.com https://kit.fontawesome.com https://cdn.datatables.net https://maxcdn.bootstrapcdn.com https://code.highcharts.com https://tako-static-assets-production.s3.amazonaws.com https://www.youtube.com https://fonts.googleapis.com https://fonts.gstatic.com https://pfst.cf2.poecdn.net https://puc.poecdn.net https://i.imgur.com https://wikimedia.org https://*.icons8.com https://*.giphy.com https://picsum.photos https://images.unsplash.com; frame-src 'self' https://www.youtube.com https://trytako.com; child-src 'self'; manifest-src 'self'; worker-src 'self'; upgrade-insecure-requests; block-all-mixed-content;">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>電磁鐵實驗模擬 - 開關與計數版</title>
+    <style>
+        body {
+            margin: 0;
+            background-color: #f0f4f8;
+            font-family: 'Microsoft JhengHei', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        #container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            height: 600px;
+            background: white;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            border-radius: 15px;
+            margin-top: 20px;
+            overflow: hidden;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        .control-panel {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px 20px;
+            box-sizing: border-box;
+            border-top: 1px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            flex: 1;
+            min-width: 150px;
+        }
+
+        label {
+            font-weight: bold;
+            color: #334155;
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+        }
+
+        input[type=range] {
+            width: 100%;
+            cursor: pointer;
+        }
+
+        /* 儀表板樣式 */
+        .dashboard {
+            display: flex;
+            gap: 15px;
+        }
+
+        .readout {
+            font-family: 'Courier New', monospace;
+            background: #1e293b;
+            color: #4ade80;
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-size: 1.1rem;
+            text-align: center;
+            min-width: 80px;
+            border: 2px solid #475569;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .readout span {
+            font-size: 0.7rem;
+            color: #94a3b8;
+            font-family: 'Microsoft JhengHei', sans-serif;
+            margin-top: 2px;
+        }
+
+        .readout.counter {
+            color: #fbbf24; /* 黃色顯示數量 */
+            border-color: #b45309;
+        }
+
+        /* 開關按鈕樣式 */
+        .switch-btn {
+            padding: 10px 20px;
+            font-size: 1rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            min-width: 100px;
+        }
+
+        .switch-on {
+            background-color: #22c55e;
+            color: white;
+            box-shadow: 0 4px 0 #15803d;
+        }
+        .switch-on:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 #15803d;
+        }
+
+        .switch-off {
+            background-color: #ef4444;
+            color: white;
+            box-shadow: 0 4px 0 #b91c1c;
+        }
+        .switch-off:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 #b91c1c;
+        }
+
+        .info-tag {
+            position: absolute;
+            background: rgba(255, 255, 200, 0.9);
+            padding: 4px 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            pointer-events: none;
+            color: #444;
+        }
+    </style>
+<script src="https://puc.poecdn.net/authenticated_preview_page/syncedState.3f7572448765332f3047.js"></script></head>
+<body>
+
+<div id="container">
+    <canvas id="simCanvas"></canvas>
+    
+    <div class="info-tag" style="top: 100px; left: 80px;">電源 (電池)</div>
+    <div class="info-tag" style="top: 100px; right: 100px;">安培計 (A)</div>
+    
+    <div class="control-panel">
+        <!-- 開關控制 -->
+        <button id="circuitSwitch" class="switch-btn switch-off" onclick="toggleSwitch()">電路斷開</button>
+
+        <div class="control-group">
+            <label>
+                輸入電壓
+                <span id="vol-val">5.0 V</span>
+            </label>
+            <input type="range" id="voltageSlider" min="0" max="10" step="0.1" value="5">
+        </div>
+
+        <div class="dashboard">
+            <div class="readout">
+                <div id="amp-display">0.00 A</div>
+                <span>電流</span>
+            </div>
+            <div class="readout counter">
+                <div id="count-display">0</div>
+                <span>吸起數量</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const canvas = document.getElementById('simCanvas');
+const ctx = canvas.getContext('2d');
+const voltageSlider = document.getElementById('voltageSlider');
+const volValDisplay = document.getElementById('vol-val');
+const ampDisplay = document.getElementById('amp-display');
+const countDisplay = document.getElementById('count-display');
+const switchBtn = document.getElementById('circuitSwitch');
+
+let width, height;
+
+// 電路參數
+let voltage = 5.0;
+const RESISTANCE = 2.0; 
+let current = 0;
+let isCircuitClosed = false; // 預設斷路
+const COIL_TURNS = 20;
+const NAIL_HEIGHT = 180;
+
+// 迴紋針
+const paperclips = [];
+const NUM_CLIPS = 20; 
+
+class Paperclip {
+    constructor(x, y) {
+        this.baseX = x;
+        this.baseY = y;
+        this.x = x;
+        this.y = y;
+        this.rotation = Math.random() * Math.PI * 2;
+        this.liftThreshold = 0; 
+        this.attached = false;
+        this.attachOffsetX = (Math.random() - 0.5) * 20;
+        // 讓吸附位置稍微分散一點，但都在尾部附近
+        this.attachOffsetY = Math.random() * 25; 
+    }
+}
+
+function initPaperclips() {
+    paperclips.length = 0;
+    const startX = width / 2 - 70;
+    for (let i = 0; i < NUM_CLIPS; i++) {
+        const x = startX + Math.random() * 140;
+        const y = height * 0.88 + Math.random() * 20; // 放在地板上
+        const clip = new Paperclip(x, y);
+        // 設定不同的閾值，模擬磁力強弱對不同距離/重量的影響
+        clip.liftThreshold = 0.3 + (i / NUM_CLIPS) * 4.5; 
+        paperclips.push(clip);
+    }
+}
+
+function resize() {
+    width = canvas.parentElement.clientWidth;
+    height = canvas.parentElement.clientHeight;
+    canvas.width = width;
+    canvas.height = height;
+    initPaperclips();
+}
+
+function toggleSwitch() {
+    isCircuitClosed = !isCircuitClosed;
+    if (isCircuitClosed) {
+        switchBtn.innerText = "電路接通";
+        switchBtn.className = "switch-btn switch-on";
+    } else {
+        switchBtn.innerText = "電路斷開";
+        switchBtn.className = "switch-btn switch-off";
+    }
+    updateCircuit();
+}
+
+function updateCircuit() {
+    voltage = parseFloat(voltageSlider.value);
+    volValDisplay.innerText = voltage.toFixed(1) + " V";
+
+    // 關鍵邏輯：如果開關斷開，電流為 0
+    if (isCircuitClosed) {
+        current = voltage / RESISTANCE;
+    } else {
+        current = 0;
+    }
+    
+    ampDisplay.innerText = current.toFixed(2) + " A";
+
+    const nailCenterY = height * 0.45; 
+    const nailTailY = nailCenterY + (NAIL_HEIGHT / 2); 
+    const nailCenterX = width / 2;
+
+    let attachedCount = 0;
+
+    paperclips.forEach(clip => {
+        // 只有當電流大於閾值，且開關是開的，才吸附
+        if (current >= clip.liftThreshold) {
+            clip.attached = true;
+            attachedCount++;
+            
+            // 目標位置：鐵釘尖端
+            // 修改：減去 15px (nailTailY - 15) 讓它們吸得更高一點，避免只看到一半
+            const targetY = (nailTailY - 10) + clip.attachOffsetY; 
+            const targetX = nailCenterX + clip.attachOffsetX;
+            
+            // 移動 (Lerp)
+            clip.y += (targetY - clip.y) * 0.15;
+            clip.x += (targetX - clip.x) * 0.15;
+            
+            let targetRot = Math.PI / 2; 
+            targetRot += Math.sin(Date.now() / 200 + clip.x) * 0.1; // 隨機擺動
+            clip.rotation += (targetRot - clip.rotation) * 0.1;
+
+        } else {
+            clip.attached = false;
+            // 掉回地板
+            clip.y += (clip.baseY - clip.y) * 0.2; // 掉落速度快一點
+            clip.x += (clip.baseX - clip.x) * 0.2;
+            
+            // 掉在地板上時隨意躺平
+            if (Math.abs(clip.y - clip.baseY) < 5) {
+                 // 接近地板時不怎麼轉動了
+            } else {
+                clip.rotation += 0.1; // 掉落時旋轉
+            }
+        }
+    });
+
+    // 更新計數器顯示
+    countDisplay.innerText = attachedCount;
+}
+
+function drawSwitch(x, y) {
+    ctx.save();
+    ctx.translate(x, y);
+    
+    // 開關底座
+    ctx.fillStyle = '#333';
+    ctx.fillRect(-20, -5, 10, 10); // 左接點
+    ctx.fillRect(40, -5, 10, 10);  // 右接點
+
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 4;
+    ctx.lineCap = 'round';
+
+    if (isCircuitClosed) {
+        // 閉合狀態：畫一條平線
+        ctx.beginPath();
+        ctx.moveTo(-10, 0);
+        ctx.lineTo(40, 0);
+        ctx.stroke();
+    } else {
+        // 斷開狀態：畫一條斜線 (閘刀翹起)
+        ctx.beginPath();
+        ctx.moveTo(-10, 0);
+        ctx.lineTo(35, -30); // 翹起
+        ctx.stroke();
+        
+        // 畫閘刀把手
+        ctx.beginPath();
+        ctx.fillStyle = '#ef4444';
+        ctx.arc(35, -30, 4, 0, Math.PI*2);
+        ctx.fill();
+    }
+    
+    // 標籤
+    ctx.fillStyle = '#666';
+    ctx.font = '12px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('S', 15, 25);
+
+    ctx.restore();
+}
+
+function drawWire(x1, y1, x2, y2) {
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.strokeStyle = '#ef4444';
+    ctx.lineWidth = 4;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.stroke();
+}
+
+function drawBattery(x, y) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.fillStyle = '#333';
+    ctx.fillRect(-40, -30, 80, 60);
+    // 電量指示燈
+    ctx.fillStyle = voltage > 0 ? '#eab308' : '#555';
+    ctx.fillRect(-30, -20, 60, 40);
+    
+    ctx.fillStyle = 'white';
+    ctx.font = '20px Arial';
+    ctx.fillText('+', -35, 0);
+    ctx.fillText('-', 25, 0);
+    ctx.restore();
+}
+
+function drawAmmeter(x, y) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.beginPath();
+    ctx.arc(0, 0, 40, 0, Math.PI * 2);
+    ctx.fillStyle = '#f1f5f9';
+    ctx.fill();
+    ctx.strokeStyle = '#334155';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    
+    // 刻度盤
+    ctx.beginPath();
+    ctx.arc(0, 0, 30, Math.PI, 0);
+    ctx.strokeStyle = '#94a3b8';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    
+    // 指針
+    const maxCurrent = 10 / RESISTANCE;
+    const angle = Math.PI + (current / maxCurrent) * Math.PI;
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(30 * Math.cos(angle), 30 * Math.sin(angle));
+    ctx.strokeStyle = '#e11d48';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    
+    ctx.fillStyle = '#333';
+    ctx.font = 'bold 16px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('A', 0, 20);
+    ctx.restore();
+}
+
+function drawElectromagnet(cx, cy) {
+    const nailWidth = 20;
+    const nailHeight = NAIL_HEIGHT;
+    
+    ctx.save();
+    ctx.translate(cx, cy);
+
+    // 磁場光暈 (只有在電流大於0時顯示)
+    if (current > 0.1) {
+        const strength = current / 5;
+        const glowRadius = 60 + strength * 120;
+        const gradient = ctx.createRadialGradient(0, nailHeight/2, 10, 0, nailHeight/2, glowRadius);
+        gradient.addColorStop(0, `rgba(59, 130, 246, ${strength * 0.6})`);
+        gradient.addColorStop(1, 'rgba(59, 130, 246, 0)');
+        
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.ellipse(0, nailHeight/2, glowRadius * 0.7, glowRadius * 0.7, 0, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    // 畫鐵釘
+    ctx.fillStyle = '#64748b';
+    ctx.fillRect(-nailWidth, -nailHeight/2, nailWidth*2, 10); // 帽
+    ctx.fillRect(-nailWidth/2, -nailHeight/2 + 10, nailWidth, nailHeight - 30); // 身
+    
+    // 尖端
+    ctx.beginPath();
+    ctx.moveTo(-nailWidth/2, nailHeight/2 - 20);
+    ctx.lineTo(nailWidth/2, nailHeight/2 - 20);
+    ctx.lineTo(0, nailHeight/2);
+    ctx.fill();
+
+    // 線圈
+    const coilHeight = nailHeight - 50;
+    const turnHeight = coilHeight / COIL_TURNS;
+    const startY = -nailHeight / 2 + 20;
+
+    ctx.lineWidth = 3;
+    ctx.lineCap = 'round';
+
+    for (let i = 0; i < COIL_TURNS; i++) {
+        const y = startY + i * turnHeight;
+        ctx.beginPath();
+        ctx.strokeStyle = '#b45309'; // 銅線暗部
+        ctx.moveTo(-nailWidth/2 - 2, y + 2);
+        ctx.lineTo(nailWidth/2 + 2, y + turnHeight - 2);
+        ctx.stroke();
+        
+        ctx.beginPath();
+        ctx.strokeStyle = '#d97706'; // 銅線亮部
+        ctx.moveTo(-nailWidth/2, y + 3);
+        ctx.lineTo(0, y + turnHeight/2);
+        ctx.stroke();
+    }
+
+    ctx.restore();
+}
+
+function drawPaperclips() {
+    ctx.strokeStyle = '#64748b';
+    ctx.lineWidth = 2;
+    
+    paperclips.forEach(clip => {
+        ctx.save();
+        ctx.translate(clip.x, clip.y);
+        ctx.rotate(clip.rotation);
+        
+        // 畫一個簡單的迴紋針形狀
+        ctx.beginPath();
+        ctx.moveTo(-6, -10);
+        ctx.lineTo(-6, 10);
+        ctx.arc(0, 10, 6, Math.PI, 0, true);
+        ctx.lineTo(6, -8);
+        ctx.arc(0, -8, 6, 0, Math.PI, true);
+        ctx.lineTo(-2, 6);
+        ctx.arc(0, 6, 2, Math.PI, 0, true);
+        ctx.stroke();
+        ctx.restore();
+    });
+}
+
+function animate() {
+    ctx.clearRect(0, 0, width, height);
+
+    const batteryPos = { x: 100, y: 150 };
+    const ammeterPos = { x: width - 100, y: 150 };
+    const nailPos = { x: width / 2, y: height * 0.45 }; 
+    
+    // 開關位置 (在電池和鐵釘之間)
+    const switchPos = { x: 250, y: 60 };
+
+    // 導線路徑
+    ctx.beginPath();
+    ctx.strokeStyle = '#ef4444';
+    ctx.lineWidth = 4;
+    
+    // 1. 電池正極 -> 開關左側
+    ctx.moveTo(batteryPos.x + 40, batteryPos.y - 30); // 電池頂部正極
+    ctx.lineTo(batteryPos.x + 40, 60);
+    ctx.lineTo(switchPos.x - 20, 60); // 到開關左接點
+    ctx.stroke();
+
+    // 2. 開關右側 -> 鐵釘上端
+    ctx.beginPath();
+    ctx.moveTo(switchPos.x + 40, 60); // 開關右接點
+    ctx.lineTo(nailPos.x - 15, 60);
+    ctx.lineTo(nailPos.x - 15, nailPos.y - 80); 
+    ctx.stroke();
+
+    // 3. 鐵釘下端 -> 安培計
+    ctx.beginPath();
+    ctx.moveTo(nailPos.x - 15, nailPos.y + 70); 
+    ctx.lineTo(nailPos.x - 15, nailPos.y + 120);
+    ctx.lineTo(ammeterPos.x, nailPos.y + 120);
+    ctx.lineTo(ammeterPos.x, ammeterPos.y + 40);
+    ctx.stroke();
+
+    // 4. 安培計 -> 電池負極
+    ctx.beginPath();
+    ctx.moveTo(ammeterPos.x, ammeterPos.y - 40);
+    ctx.lineTo(ammeterPos.x, 40); // 繞上面一點回去
+    ctx.lineTo(batteryPos.x - 40, 40);
+    ctx.lineTo(batteryPos.x - 40, batteryPos.y - 30);
+    ctx.stroke();
+
+    drawBattery(batteryPos.x, batteryPos.y);
+    drawAmmeter(ammeterPos.x, ammeterPos.y);
+    drawElectromagnet(nailPos.x, nailPos.y);
+    drawSwitch(switchPos.x, switchPos.y);
+    drawPaperclips();
+
+    updateCircuit();
+    requestAnimationFrame(animate);
+}
+
+window.addEventListener('resize', resize);
+voltageSlider.addEventListener('input', updateCircuit);
+
+setTimeout(() => {
+    resize();
+    animate();
+}, 100);
+
+</script>
+
+
+</body></html>
