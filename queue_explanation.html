@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>隊列數據結構演示 - 空間對比版</title>
+    <style>
+        :root {
+            --primary: #3498db;
+            --secondary: #9b59b6;
+            --success: #2ecc71;
+            --danger: #e74c3c;
+            --dark: #2c3e50;
+            --bg: #f5f6fa;
+            --empty: #dfe6e9;
+        }
+
+        body {
+            font-family: "Microsoft JhengHei", sans-serif;
+            background-color: var(--bg);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        nav {
+            width: 100%;
+            background: var(--dark);
+            padding: 15px 0;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .nav-btn {
+            padding: 10px 20px; border: none; border-radius: 5px;
+            background: #34495e; color: white; cursor: pointer; font-weight: bold;
+        }
+
+        .nav-btn.active { background: var(--primary); }
+
+        .container { display: none; flex-direction: column; align-items: center; padding: 40px; }
+        .container.active { display: flex; }
+
+        .info-box {
+            background: white; padding: 20px; border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05); max-width: 600px; margin-bottom: 20px;
+        }
+
+        /* --- 線性隊列樣式 --- */
+        .array-container {
+            display: flex; gap: 5px; background: white; padding: 20px;
+            border: 2px solid #ccc; border-radius: 10px; margin: 20px 0;
+        }
+        .array-slot {
+            width: 50px; height: 60px; border: 2px solid #bdc3c7;
+            display: flex; flex-direction: column; align-items: center; position: relative;
+        }
+        .slot-val {
+            width: 100%; height: 40px; display: flex; justify-content: center;
+            align-items: center; font-weight: bold;
+        }
+        .slot-val.filled { background: var(--primary); color: white; }
+        .slot-idx { font-size: 10px; color: #999; }
+        
+        .ptr-label {
+            position: absolute; font-size: 12px; font-weight: bold;
+            padding: 2px 5px; border-radius: 3px; color: white; top: 65px;
+        }
+
+        /* --- 循環隊列樣式 --- */
+        .circle-area {
+            position: relative; width: 360px; height: 360px;
+            border-radius: 50%; border: 8px solid #ddd; margin: 30px;
+        }
+        .slot {
+            position: absolute; width: 60px; height: 60px; background: #eee;
+            border: 2px solid #bdc3c7; border-radius: 50%;
+            display: flex; justify-content: center; align-items: center;
+            transform: translate(-50%, -50%);
+        }
+        .slot.filled { background: var(--secondary); color: white; }
+        .ptr { position: absolute; padding: 3px 8px; border-radius: 4px; color: white; font-size: 12px; z-index: 10; }
+
+        .controls { display: flex; gap: 10px; margin-top: 40px; }
+        input { padding: 10px; border: 2px solid #ddd; border-radius: 5px; width: 60px; }
+        button { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; color: white; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<nav>
+    <button class="nav-btn active" onclick="switchMode('linear')">線性隊列 (有限空間)</button>
+    <button class="nav-btn" onclick="switchMode('circular')">循環隊列 (空間回收)</button>
+</nav>
+
+<div id="linear-container" class="container active">
+    <h1>線性隊列 (Limited Linear Queue)</h1>
+    <div class="info-box">
+        <b>演示重點：</b>請先不斷 Enqueue 直到滿。然後 Dequeue 幾次。你會發現，雖然左邊空出來了，但因為 Rear 指標已經到頂，你無法再加入新數據。這就是「假溢出」。
+    </div>
+    <div class="array-container" id="lin-array"></div>
+    <div class="controls">
+        <input type="text" id="linInput" placeholder="值">
+        <button style="background: var(--success)" onclick="linEnqueue()">Enqueue</button>
+        <button style="background: var(--danger)" onclick="linDequeue()">Dequeue</button>
+        <button style="background: #7f8c8d" onclick="resetLinear()">重置</button>
+    </div>
+</div>
+
+<div id="circular-container" class="container">
+    <h1>循環隊列 (Circular Queue)</h1>
+    <div class="info-box">
+        <b>演示重點：</b>同樣的操作。當 Rear 到達最後一格時，它會利用 <code>(Rear + 1) % MAX</code> 繞回到索引 0，利用前面被 Dequeue 空出的空間。
+    </div>
+    <div class="circle-area" id="circle-box">
+        <div id="f-ptr-c" class="ptr" style="background:var(--danger)">Front</div>
+        <div id="r-ptr-c" class="ptr" style="background:var(--success)">Rear</div>
+    </div>
+    <div class="controls">
+        <input type="text" id="cirInput" placeholder="值">
+        <button style="background: var(--secondary)" onclick="cirEnqueue()">Enqueue</button>
+        <button style="background: #34495e;" onclick="cirDequeue()">Dequeue</button>
+        <button style="background: #7f8c8d" onclick="resetCircular()">重置</button>
+    </div>
+</div>
+
+<script>
+    const MAX = 8;
+
+    // --- 模式切換 ---
+    function switchMode(mode) {
+        document.querySelectorAll('.container').forEach(c => c.classList.remove('active'));
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        if(mode === 'linear') {
+            document.getElementById('linear-container').classList.add('active');
+            document.querySelectorAll('.nav-btn')[0].classList.add('active');
+        } else {
+            document.getElementById('circular-container').classList.add('active');
+            document.querySelectorAll('.nav-btn')[1].classList.add('active');
+            initCircular();
+        }
+    }
+
+    // --- 線性隊列邏輯 ---
+    let linData = new Array(MAX).fill(null);
+    let lFront = 0;
+    let lRear = -1;
+
+    function renderLinear() {
+        const container = document.getElementById('lin-array');
+        container.innerHTML = '';
+        for(let i=0; i<MAX; i++) {
+            const slot = document.createElement('div');
+            slot.className = 'array-slot';
+            const valDiv = document.createElement('div');
+            valDiv.className = 'slot-val' + (linData[i] ? ' filled' : '');
+            valDiv.innerText = linData[i] || '';
+            
+            slot.appendChild(valDiv);
+            slot.innerHTML += `<div class="slot-idx">${i}</div>`;
+            
+            if(i === lFront) slot.innerHTML += `<div class="ptr-label" style="background:var(--danger); left:0">F</div>`;
+            if(i === lRear) slot.innerHTML += `<div class="ptr-label" style="background:var(--success); right:0">R</div>`;
+            
+            container.appendChild(slot);
+        }
+    }
+
+    function linEnqueue() {
+        if(lRear === MAX - 1) {
+            alert("線性隊列已滿（Rear 已達上限）！即便前面有空位也無法進入。");
+            return;
+        }
+        const v = document.getElementById('linInput').value || "★";
+        lRear++;
+        linData[lRear] = v;
+        renderLinear();
+    }
+
+    function linDequeue() {
+        if(lFront > lRear) return alert("隊列已空！");
+        linData[lFront] = null;
+        lFront++;
+        renderLinear();
+    }
+
+    function resetLinear() { lData = new Array(MAX).fill(null); lFront=0; lRear=-1; linData = lData; renderLinear(); }
+
+    // --- 循環隊列邏輯 ---
+    let cirQueue = new Array(MAX).fill(null);
+    let cFront = -1, cRear = -1;
+
+    function initCircular() {
+        const box = document.getElementById('circle-box');
+        if(box.querySelectorAll('.slot').length > 0) return;
+        for(let i=0; i<MAX; i++) {
+            const angle = (i * (360/MAX) - 90) * (Math.PI/180);
+            const x = 180 + 130 * Math.cos(angle);
+            const y = 180 + 130 * Math.sin(angle);
+            const slot = document.createElement('div');
+            slot.className = 'slot'; slot.id = `cs-${i}`;
+            slot.style.left = x+'px'; slot.style.top = y+'px';
+            slot.innerHTML = `<small style="font-size:10px; position:absolute; top:-12px">${i}</small><span class="v"></span>`;
+            box.appendChild(slot);
+        }
+        updateCirDisplay();
+    }
+
+    function updateCirDisplay() {
+        for(let i=0; i<MAX; i++) {
+            const s = document.getElementById(`cs-${i}`);
+            s.className = cirQueue[i] ? 'slot filled' : 'slot';
+            s.querySelector('.v').innerText = cirQueue[i] || '';
+        }
+        movePtr('f-ptr-c', cFront, -35);
+        movePtr('r-ptr-c', cRear, 35);
+    }
+
+    function movePtr(id, idx, offset) {
+        const p = document.getElementById(id);
+        if(idx === -1) { p.style.opacity = '0'; return; }
+        p.style.opacity = '1';
+        const s = document.getElementById(`cs-${idx}`);
+        p.style.left = s.style.left; p.style.top = (parseInt(s.style.top) + offset) + 'px';
+    }
+
+    function cirEnqueue() {
+        if((cRear + 1) % MAX === cFront) return alert("循環隊列已滿！");
+        const v = document.getElementById('cirInput').value || "●";
+        if(cFront === -1) cFront = 0;
+        cRear = (cRear + 1) % MAX;
+        cirQueue[cRear] = v;
+        updateCirDisplay();
+    }
+
+    function cirDequeue() {
+        if(cFront === -1) return alert("隊列已空！");
+        cirQueue[cFront] = null;
+        if(cFront === cRear) { cFront = -1; cRear = -1; }
+        else cFront = (cFront + 1) % MAX;
+        updateCirDisplay();
+    }
+    
+    function resetCircular() { cirQueue = new Array(MAX).fill(null); cFront=-1; cRear=-1; updateCirDisplay(); }
+
+    renderLinear();
+</script>
+</body>
+</html>
