@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>二元搜尋法 (Binary Search) 動態視覺化教學工具</title>
+    <!-- 引入 Tailwind CSS 提供現代化介面 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Font Awesome 圖示 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&family=Outfit:wght@300;400;600;800&display=swap');
+        
+        body {
+            font-family: 'Outfit', 'Noto Sans TC', sans-serif;
+            background: #f8fafc;
+        }
+
+        /* 漸層動態背景與平滑過渡 */
+        .card-shadow {
+            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+        }
+
+        /* 陣列元素動畫效果 */
+        .array-item {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* 指標滑動動畫 */
+        .pointer-tag {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        /* 亮點脈衝 */
+        .pulse-highlight {
+            animation: pulse-border 2s infinite;
+        }
+        @keyframes pulse-border {
+            0%, 100% { border-color: rgba(59, 130, 246, 0.5); box-shadow: 0 0 0 0px rgba(59, 130, 246, 0.3); }
+            50% { border-color: rgba(59, 130, 246, 1); box-shadow: 0 0 0 8px rgba(59, 130, 246, 0); }
+        }
+    </style>
+</head>
+<body class="min-h-screen text-slate-800 flex flex-col justify-between">
+
+    <!-- 頂部導覽列 -->
+    <header class="bg-white border-b border-slate-200 py-4 px-6 sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="bg-blue-600 text-white p-2.5 rounded-xl shadow-md shadow-blue-200">
+                    <i class="fa-solid fa-magnifying-glass-chart text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold text-slate-900 tracking-tight">Binary Search Visualizer</h1>
+                    <p class="text-xs text-slate-500 font-medium">二元搜尋演算法互動式教學系統</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    適合 50 分鐘教案展示
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主要操作區 -->
+    <main class="max-w-6xl mx-auto p-4 sm:p-6 flex-grow w-full grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        
+        <!-- 左側：視覺化核心看板 (佔 8 格) -->
+        <section class="lg:col-span-8 flex flex-col gap-6">
+            
+            <!-- 控制控制面板 -->
+            <div class="bg-white p-6 rounded-2xl card-shadow border border-slate-100">
+                <div class="flex flex-wrap items-center justify-between gap-4">
+                    <div class="flex flex-wrap items-center gap-3">
+                        <button id="btn-generate" class="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-medium rounded-xl text-sm transition flex items-center gap-2 shadow-sm">
+                            <i class="fa-solid fa-arrows-rotate"></i> 隨機生數
+                        </button>
+                        <div class="flex items-center bg-slate-100 rounded-xl px-3 py-2 border border-slate-200">
+                            <label for="input-target" class="text-xs font-bold text-slate-500 mr-2 uppercase">目標 Target:</label>
+                            <input type="number" id="input-target" value="23" class="bg-transparent w-16 text-center font-bold text-blue-600 focus:outline-none" min="1" max="99">
+                        </div>
+                        <button id="btn-set-target" class="px-3.5 py-2.5 bg-blue-50 text-blue-600 hover:bg-blue-100 font-semibold rounded-xl text-sm transition">
+                            設定目標
+                        </button>
+                    </div>
+                    
+                    <!-- 快速選取代表值 -->
+                    <div class="flex items-center gap-1.5 bg-slate-50 p-1.5 rounded-xl border border-slate-100">
+                        <span class="text-xs font-bold text-slate-400 px-2">試試看:</span>
+                        <button class="quick-target-btn px-2.5 py-1 text-xs font-medium rounded-lg bg-white hover:bg-blue-50 border border-slate-200 hover:border-blue-200 transition" data-val="exist">存在的值</button>
+                        <button class="quick-target-btn px-2.5 py-1 text-xs font-medium rounded-lg bg-white hover:bg-red-50 border border-slate-200 hover:border-red-200 transition" data-val="missing">不存在的值</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 主動畫顯示區 -->
+            <div class="bg-white p-8 rounded-3xl card-shadow border border-slate-100 relative min-h-[380px] flex flex-col justify-between overflow-hidden">
+                
+                <!-- 目標值看板 -->
+                <div class="flex justify-between items-center mb-6">
+                    <div class="flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
+                        <span class="text-sm font-semibold text-slate-500">搜尋進度視窗</span>
+                    </div>
+                    <div class="bg-blue-600 text-white px-4 py-1.5 rounded-full text-sm font-bold flex items-center gap-2 shadow-md shadow-blue-100">
+                        <span>尋找目標 Target:</span>
+                        <span id="display-target" class="text-base font-extrabold bg-white text-blue-700 px-2 py-0.5 rounded-md">23</span>
+                    </div>
+                </div>
+
+                <!-- 陣列圖形 -->
+                <div class="my-auto py-10 relative">
+                    <!-- 陣列本體 -->
+                    <div id="array-container" class="flex justify-between items-center gap-2 md:gap-3 w-full">
+                        <!-- 動態插入元素 -->
+                    </div>
+
+                    <!-- 指標標籤軌道 -->
+                    <div class="relative h-24 mt-4 w-full">
+                        <!-- L 指標 -->
+                        <div id="ptr-left" class="pointer-tag absolute top-2 flex flex-col items-center" style="width: 60px; left: 0%; transform: translateX(-50%);">
+                            <div class="text-emerald-500 text-xl animate-bounce"><i class="fa-solid fa-caret-up"></i></div>
+                            <div class="bg-emerald-500 text-white text-xs font-black px-2 py-1 rounded shadow-md">L</div>
+                            <div class="text-[10px] text-emerald-600 font-bold mt-1" id="lbl-left-idx">idx: 0</div>
+                        </div>
+
+                        <!-- M 指標 -->
+                        <div id="ptr-mid" class="pointer-tag absolute top-2 flex flex-col items-center" style="width: 60px; left: 50%; transform: translateX(-50%);">
+                            <div class="text-blue-500 text-xl animate-bounce"><i class="fa-solid fa-caret-up"></i></div>
+                            <div class="bg-blue-600 text-white text-xs font-black px-2 py-1 rounded shadow-md">Mid</div>
+                            <div class="text-[10px] text-blue-600 font-bold mt-1" id="lbl-mid-idx">idx: 4</div>
+                        </div>
+
+                        <!-- R 指標 -->
+                        <div id="ptr-right" class="pointer-tag absolute top-2 flex flex-col items-center" style="width: 60px; left: 100%; transform: translateX(-50%);">
+                            <div class="text-rose-500 text-xl animate-bounce"><i class="fa-solid fa-caret-up"></i></div>
+                            <div class="bg-rose-500 text-white text-xs font-black px-2 py-1 rounded shadow-md">R</div>
+                            <div class="text-[10px] text-rose-600 font-bold mt-1" id="lbl-right-idx">idx: 9</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 單步執行控制按鈕 -->
+                <div class="flex items-center justify-between border-t border-slate-100 pt-6 mt-4">
+                    <div class="flex items-center gap-1.5">
+                        <span class="text-xs font-bold text-slate-400 bg-slate-100 px-2.5 py-1 rounded-md uppercase">
+                            Step <span id="current-step-num">0</span>/<span id="total-steps-num">0</span>
+                        </span>
+                    </div>
+                    
+                    <div class="flex items-center gap-3">
+                        <button id="btn-prev" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 disabled:opacity-40 disabled:hover:bg-slate-100 text-slate-700 font-bold rounded-xl transition flex items-center gap-2 text-sm">
+                            <i class="fa-solid fa-arrow-left"></i> 上一步
+                        </button>
+                        <button id="btn-next" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:hover:bg-blue-600 text-white font-bold rounded-xl transition flex items-center gap-2 text-sm shadow-md shadow-blue-100">
+                            下一步 <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </div>
+
+                    <div>
+                        <button id="btn-reset" class="text-slate-400 hover:text-slate-600 font-semibold text-sm transition flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-slate-50">
+                            <i class="fa-solid fa-rotate-left"></i> 重設此局
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- 右側：步驟記錄器與教學輔助 (佔 4 格) -->
+        <section class="lg:col-span-4 flex flex-col gap-6">
+            
+            <!-- 即時動態說明卡片 -->
+            <div class="bg-white p-6 rounded-3xl card-shadow border border-slate-100">
+                <div class="flex items-center gap-2 mb-4">
+                    <i class="fa-solid fa-comment-dots text-blue-500 text-lg"></i>
+                    <h2 class="text-base font-bold text-slate-900">當前狀態分析說明</h2>
+                </div>
+                <div id="status-card" class="bg-blue-50 border border-blue-100 rounded-2xl p-4 min-h-[140px] flex flex-col justify-between">
+                    <p id="status-text" class="text-sm text-blue-800 font-medium leading-relaxed">
+                        準備就緒！請按「下一步」開始進行二分搜索演算法。
+                    </p>
+                    <div id="status-math" class="mt-3 text-xs font-mono font-bold text-blue-600 bg-white/70 px-2.5 py-1.5 rounded-lg border border-blue-200/50 inline-block self-start">
+                        -
+                    </div>
+                </div>
+            </div>
+
+            <!-- 演算法流程狀態追蹤 -->
+            <div class="bg-white p-6 rounded-3xl card-shadow border border-slate-100">
+                <div class="flex items-center gap-2 mb-4">
+                    <i class="fa-solid fa-code text-slate-700 text-lg"></i>
+                    <h2 class="text-base font-bold text-slate-900">核心程式監控 (Python)</h2>
+                </div>
+                <div class="bg-slate-900 rounded-2xl p-4 font-mono text-[11px] leading-relaxed text-slate-300 relative overflow-hidden">
+                    <div id="code-line-0" class="px-2 py-0.5 rounded">left, right = 0, len(arr) - 1</div>
+                    <div id="code-line-1" class="px-2 py-0.5 rounded"><span class="text-amber-400">while</span> left &lt;= right:</div>
+                    <div id="code-line-2" class="px-2 py-0.5 rounded">&nbsp;&nbsp;&nbsp;&nbsp;mid = (left + right) // 2</div>
+                    <div id="code-line-3" class="px-2 py-0.5 rounded">&nbsp;&nbsp;&nbsp;&nbsp;<span class="text-amber-400">if</span> arr[mid] == target:</div>
+                    <div id="code-line-4" class="px-2 py-0.5 rounded">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="text-emerald-400">return</span> mid <span class="text-slate-500"># 找到答案</span></div>
+                    <div id="code-line-5" class="px-2 py-0.5 rounded">&nbsp;&nbsp;&nbsp;&nbsp;<span class="text-amber-400">elif</span> arr[mid] &gt; target:</div>
+                    <div id="code-line-6" class="px-2 py-0.5 rounded">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;right = mid - 1 <span class="text-slate-500"># 往左限縮</span></div>
+                    <div id="code-line-7" class="px-2 py-0.5 rounded">&nbsp;&nbsp;&nbsp;&nbsp;<span class="text-amber-400">else</span>:</div>
+                    <div id="code-line-8" class="px-2 py-0.5 rounded">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;left = mid + 1  <span class="text-slate-500"># 往右限縮</span></div>
+                    <div id="code-line-9" class="px-2 py-0.5 rounded"><span class="text-rose-400">return</span> -1 <span class="text-slate-500"># 宣告找不到</span></div>
+                </div>
+            </div>
+
+            <!-- 教師快捷簡报摘要 -->
+            <div class="bg-slate-900 text-slate-100 p-6 rounded-3xl card-shadow">
+                <h3 class="text-sm font-bold tracking-wider text-slate-400 uppercase mb-3">板書小訣竅</h3>
+                <ul class="space-y-2.5 text-xs text-slate-300">
+                    <li class="flex gap-2"><i class="fa-regular fa-lightbulb text-amber-400 mt-0.5"></i> <span><strong>必先排序：</strong>提醒學生，若陣列沒有排序（Sorted），二元搜尋絕不能使用。</span></li>
+                    <li class="flex gap-2"><i class="fa-regular fa-lightbulb text-amber-400 mt-0.5"></i> <span><strong>停止時機：</strong>若 Left 超過 Right（L > R），則判定目標值不在陣列中。</span></li>
+                    <li class="flex gap-2"><i class="fa-regular fa-lightbulb text-amber-400 mt-0.5"></i> <span><strong>中間計算：</strong><code>(L+R)//2</code> 在大數據極限下可能溢位，進階可教 <code>L+(R-L)//2</code>。</span></li>
+                </ul>
+            </div>
+            
+        </section>
+
+    </main>
+
+    <!-- 底部說明欄 -->
+    <footer class="bg-slate-900 text-slate-400 text-center py-6 border-t border-slate-800 text-xs font-medium">
+        <p>© 2026 二元搜尋法 (Binary Search) 教學演示套件. 專屬 50 分鐘資訊課堂設計.</p>
+    </footer>
+
+    <!-- 核心演算法與動畫控制邏輯 -->
+    <script>
+        // 1. 全域變數初始化
+        let array = [2, 5, 8, 12, 16, 23, 38, 56, 72, 91]; // 預設 10 個經典數值
+        let target = 23;
+        let history = []; // 用於儲存每一步的狀態，以支援「上一步」功能
+        let currentStepIndex = 0; // 當前歷史記錄指標
+
+        // DOM 節點獲取
+        const arrayContainer = document.getElementById('array-container');
+        const inputTarget = document.getElementById('input-target');
+        const displayTarget = document.getElementById('display-target');
+        const btnGenerate = document.getElementById('btn-generate');
+        const btnSetTarget = document.getElementById('btn-set-target');
+        const btnPrev = document.getElementById('btn-prev');
+        const btnNext = document.getElementById('btn-next');
+        const btnReset = document.getElementById('btn-reset');
+        const statusText = document.getElementById('status-text');
+        const statusMath = document.getElementById('status-math');
+        const currentStepNum = document.getElementById('current-step-num');
+        const totalStepsNum = document.getElementById('total-steps-num');
+
+        // 指標 DOM 節點
+        const ptrLeft = document.getElementById('ptr-left');
+        const ptrMid = document.getElementById('ptr-mid');
+        const ptrRight = document.getElementById('ptr-right');
+        const lblLeftIdx = document.getElementById('lbl-left-idx');
+        const lblMidIdx = document.getElementById('lbl-mid-idx');
+        const lblRightIdx = document.getElementById('lbl-right-idx');
+
+        // 2. 演算法歷程產生器 (Pre-compute 所有的搜尋步驟以支援任意前後跳轉)
+        function generateSearchHistory() {
+            history = [];
+            
+            // 初始狀態 (第 0 步)
+            history.push({
+                left: 0,
+                right: array.length - 1,
+                mid: null,
+                stage: 'start', // 'start', 'compare', 'narrow-left', 'narrow-right', 'found', 'not-found'
+                msg: `準備搜尋。目標數值為 ${target}。已將 L 與 R 指針分別置於頭與尾。`,
+                formula: `L = 0, R = ${array.length - 1}`,
+                codeLine: 0
+            });
+
+            let L = 0;
+            let R = array.length - 1;
+
+            while (L <= R) {
+                let M = Math.floor((L + R) / 2);
+                
+                // 第一階段：計算出 Mid 位置並準備比較
+                history.push({
+                    left: L,
+                    right: R,
+                    mid: M,
+                    stage: 'compare',
+                    msg: `計算中間點 Mid ＝ ⌊(${L} + ${R}) / 2⌋ ＝ ${M}。其對應的數值為 ${array[M]}。開始與目標值 ${target} 比較。`,
+                    formula: `Mid = (${L} + ${R}) // 2 = ${M} | arr[${M}] = ${array[M]}`,
+                    codeLine: 2
+                });
+
+                if (array[M] === target) {
+                    history.push({
+                        left: L,
+                        right: R,
+                        mid: M,
+                        stage: 'found',
+                        msg: `🎉 成功！中間點的值 arr[${M}] (${array[M]}) 與目標值 ${target} 完全一致！搜尋成功！`,
+                        formula: `arr[${M}] == ${target} | 結束`,
+                        codeLine: 4
+                    });
+                    break;
+                } else if (array[M] > target) {
+                    history.push({
+                        left: L,
+                        right: R,
+                        mid: M,
+                        stage: 'narrow-left',
+                        msg: `中間點的值 ${array[M]} 大於目標值 ${target}。代表目標如果存在，必定在【左半邊】。我們將右邊界 R 限縮至 Mid - 1 ＝ ${M - 1}。`,
+                        formula: `arr[${M}] (${array[M]}) > ${target} | 往左收窄`,
+                        codeLine: 6
+                    });
+                    R = M - 1;
+                } else {
+                    history.push({
+                        left: L,
+                        right: R,
+                        mid: M,
+                        stage: 'narrow-right',
+                        msg: `中間點的值 ${array[M]} 小於目標值 ${target}。代表目標如果存在，必定在【右半邊】。我們將左邊界 L 限縮至 Mid + 1 ＝ ${M + 1}。`,
+                        formula: `arr[${M}] (${array[M]}) < ${target} | 往右收窄`,
+                        codeLine: 8
+                    });
+                    L = M + 1;
+                }
+            }
+
+            // 若最終依然找不到
+            if (L > R) {
+                history.push({
+                    left: L,
+                    right: R,
+                    mid: null,
+                    stage: 'not-found',
+                    msg: `搜尋結束。目前 L (${L}) 超過了 R (${R})，出現了「重疊交錯（L > R）」的情形。證明此陣列中沒有數值 ${target}。`,
+                    formula: `L (${L}) > R (${R}) | 宣告找不到 (-1)`,
+                    codeLine: 9
+                });
+            }
+
+            currentStepIndex = 0;
+            updateUI();
+        }
+
+        // 3. 畫面繪製與視覺化更新
+        function updateUI() {
+            const step = history[currentStepIndex];
+            
+            // 繪製陣列項目
+            arrayContainer.innerHTML = '';
+            array.forEach((val, idx) => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = `array-item flex-1 text-center py-4 rounded-xl border-2 font-black transition-all duration-300 shadow-sm relative`;
+                itemDiv.innerHTML = `<span class="block text-xs text-slate-400 font-bold mb-1">${idx}</span>
+                                     <span class="text-base md:text-lg text-slate-800">${val}</span>`;
+                
+                // 根據狀態設定色調與透明度
+                let isEliminated = false;
+                
+                if (step.stage === 'start') {
+                    // 初始全亮
+                    itemDiv.classList.add('bg-white', 'border-slate-200');
+                } else {
+                    // 若有 left、right，判斷是否在搜尋區間外
+                    if (idx < step.left || idx > step.right) {
+                        isEliminated = true;
+                    }
+                    
+                    if (isEliminated) {
+                        itemDiv.classList.add('bg-slate-100', 'border-slate-200', 'opacity-30');
+                    } else {
+                        itemDiv.classList.add('bg-white', 'border-slate-300');
+                    }
+                }
+
+                // 當前被選定 Mid 的特別色
+                if (step.mid !== null && idx === step.mid) {
+                    itemDiv.classList.remove('bg-white', 'border-slate-300', 'border-slate-200');
+                    if (step.stage === 'found') {
+                        // 找到
+                        itemDiv.classList.add('bg-emerald-500', 'border-emerald-600', 'text-white', 'pulse-highlight');
+                        itemDiv.querySelector('span:last-child').className = 'text-base md:text-lg text-white';
+                    } else if (step.stage === 'compare') {
+                        // 正在比較
+                        itemDiv.classList.add('bg-blue-100', 'border-blue-500', 'text-blue-700', 'scale-105');
+                        itemDiv.querySelector('span:last-child').className = 'text-base md:text-lg text-blue-800 font-extrabold';
+                    } else if (step.stage === 'narrow-left') {
+                        itemDiv.classList.add('bg-rose-50', 'border-rose-400');
+                    } else if (step.stage === 'narrow-right') {
+                        itemDiv.classList.add('bg-emerald-50', 'border-emerald-400');
+                    }
+                }
+
+                arrayContainer.appendChild(itemDiv);
+            });
+
+            // 計算寬度與指標偏移位置
+            const containerWidth = arrayContainer.offsetWidth;
+            const elementWidth = containerWidth / array.length;
+            
+            const getPercentOffset = (idx) => {
+                if (idx < 0) return 0;
+                if (idx >= array.length) return 100;
+                // 計算正中心點百分比
+                const pixelOffset = (idx * elementWidth) + (elementWidth / 2);
+                return (pixelOffset / containerWidth) * 100;
+            };
+
+            // 控制指標可見度與定位
+            // L 指標
+            if (step.left !== null && step.left <= array.length) {
+                ptrLeft.style.opacity = '1';
+                ptrLeft.style.left = `${getPercentOffset(step.left)}%`;
+                lblLeftIdx.innerText = `idx: ${step.left}`;
+            } else {
+                ptrLeft.style.opacity = '0';
+            }
+
+            // R 指標
+            if (step.right !== null && step.right >= -1) {
+                ptrRight.style.opacity = '1';
+                ptrRight.style.left = `${getPercentOffset(step.right)}%`;
+                lblRightIdx.innerText = `idx: ${step.right}`;
+            } else {
+                ptrRight.style.opacity = '0';
+            }
+
+            // M 指標
+            if (step.mid !== null) {
+                ptrMid.style.opacity = '1';
+                ptrMid.style.left = `${getPercentOffset(step.mid)}%`;
+                lblMidIdx.innerText = `idx: ${step.mid}`;
+            } else {
+                ptrMid.style.opacity = '0';
+            }
+
+            // 文字敘述與公式顯示
+            statusText.innerText = step.msg;
+            statusMath.innerText = `[運算過程] ${step.formula}`;
+
+            // 動態卡片邊框渲染
+            const statusCard = document.getElementById('status-card');
+            statusCard.className = "rounded-2xl p-4 min-h-[140px] flex flex-col justify-between border transition-all duration-300";
+            if (step.stage === 'found') {
+                statusCard.classList.add('bg-emerald-50', 'border-emerald-200', 'text-emerald-900');
+            } else if (step.stage === 'compare') {
+                statusCard.classList.add('bg-blue-50', 'border-blue-200', 'text-blue-900');
+            } else if (step.stage === 'not-found') {
+                statusCard.classList.add('bg-rose-50', 'border-rose-200', 'text-rose-900');
+            } else {
+                statusCard.classList.add('bg-slate-50', 'border-slate-200', 'text-slate-800');
+            }
+
+            // 控制核心程式監控區塊高亮
+            for (let i = 0; i <= 9; i++) {
+                const line = document.getElementById(`code-line-${i}`);
+                if (i === step.codeLine) {
+                    line.className = "px-2 py-0.5 rounded bg-blue-600/30 text-white font-bold border-l-4 border-blue-500 pl-1";
+                } else {
+                    line.className = "px-2 py-0.5 rounded text-slate-400 pl-2";
+                }
+            }
+
+            // 控制按鈕禁用狀態
+            btnPrev.disabled = currentStepIndex === 0;
+            btnNext.disabled = currentStepIndex === history.length - 1;
+
+            // 步驟計數器更新
+            currentStepNum.innerText = currentStepIndex + 1;
+            totalStepsNum.innerText = history.length;
+        }
+
+        // 4. 陣列生成與資料初始化
+        function generateRandomArray() {
+            let tempSet = new Set();
+            while (tempSet.size < 10) {
+                tempSet.add(Math.floor(Math.random() * 95) + 3); // 產生 3 到 98 的數字
+            }
+            array = Array.from(tempSet).sort((a, b) => a - b); // 排序非常重要！
+            
+            // 默認從陣列隨機挑選一個值當作搜尋目標
+            const randomIndex = Math.floor(Math.random() * array.length);
+            target = array[randomIndex];
+            
+            inputTarget.value = target;
+            displayTarget.innerText = target;
+
+            generateSearchHistory();
+        }
+
+        // 5. 事件監聽設定
+        btnGenerate.addEventListener('click', () => {
+            generateRandomArray();
+        });
+
+        btnSetTarget.addEventListener('click', () => {
+            const val = parseInt(inputTarget.value);
+            if (isNaN(val) || val < 1 || val > 100) {
+                alert("請輸入 1 到 100 之間的有效整數！");
+                return;
+            }
+            target = val;
+            displayTarget.innerText = target;
+            generateSearchHistory();
+        });
+
+        btnPrev.addEventListener('click', () => {
+            if (currentStepIndex > 0) {
+                currentStepIndex--;
+                updateUI();
+            }
+        });
+
+        btnNext.addEventListener('click', () => {
+            if (currentStepIndex < history.length - 1) {
+                currentStepIndex++;
+                updateUI();
+            }
+        });
+
+        btnReset.addEventListener('click', () => {
+            currentStepIndex = 0;
+            updateUI();
+        });
+
+        // 試試看快捷按鈕處理
+        document.querySelectorAll('.quick-target-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const type = e.target.getAttribute('data-val');
+                if (type === 'exist') {
+                    // 必定存在 (選用 index 為 5 的值)
+                    target = array[5];
+                } else {
+                    // 必定不存在 (通常隨機取陣列第一個值減1)
+                    target = array[0] - 1;
+                    if (target <= 0) target = 99; // 防呆
+                }
+                inputTarget.value = target;
+                displayTarget.innerText = target;
+                generateSearchHistory();
+            });
+        });
+
+        // 監聽鍵盤左右方向鍵以利流暢教學
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                if (currentStepIndex < history.length - 1) {
+                    currentStepIndex++;
+                    updateUI();
+                }
+                e.preventDefault();
+            } else if (e.key === 'ArrowLeft') {
+                if (currentStepIndex > 0) {
+                    currentStepIndex--;
+                    updateUI();
+                }
+                e.preventDefault();
+            }
+        });
+
+        // 視窗大小改變時重新適配指針定位 (避免 Flexbox 位移導致指針跑位)
+        window.addEventListener('resize', () => {
+            updateUI();
+        });
+
+        // 初始化第一次執行
+        window.onload = function() {
+            generateSearchHistory();
+        };
+
+    </script>
+</body>
+</html>
